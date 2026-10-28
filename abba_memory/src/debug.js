@@ -83,13 +83,15 @@ G.Debug = {
     }
     else if (a === 'reset') {
       s.board = G.Board.create(D);
+      G.Board.setStage(D, s.board, s.expand);
       G.save();
       G.Debug.out('보드를 처음 상태로 되돌렸습니다.');
     }
     else if (a === 'make') {
       var chain = document.getElementById('dbgChain').value;
       var lv = Math.min(+document.getElementById('dbgLv').value, G.Board.maxLv(D, chain));
-      var at = s.board.cells.indexOf(null);
+      var at = G.Board.emptyCells(s.board)[0];
+      if (at === undefined) at = -1;
       if (at < 0) { G.Debug.out('빈 칸이 없습니다.'); return; }
       s.board.cells[at] = G.Board.newItem(s.board, chain, lv);
       G.addAnim({ type: 'pop', id: s.board.cells[at].id, dur: 260 });
@@ -98,7 +100,7 @@ G.Debug = {
     else if (a === 'fill') {
       var keys = Object.keys(D.chains);
       for (var i = 0; i < s.board.cells.length; i++) {
-        if (!s.board.cells[i]) s.board.cells[i] = G.Board.newItem(s.board, keys[i % keys.length], 1 + (i % 3));
+        if (!s.board.cells[i] && G.Board.isOpen(s.board, i)) s.board.cells[i] = G.Board.newItem(s.board, keys[i % keys.length], 1 + (i % 3));
       }
       G.save();
     }

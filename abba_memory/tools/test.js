@@ -15,8 +15,10 @@ function check(name, cond) {
   if (cond) pass++;
   else { fail++; console.log('  실패: ' + name); }
 }
+// 칸이 전부 열린(확장 2단계) 빈 보드 (생성기만 있음)
 function emptyBoard() {
   var s = B.create(D);
+  B.setStage(D, s, 2);
   for (var i = 0; i < s.cells.length; i++) if (s.cells[i] && s.cells[i].kind === 'item') s.cells[i] = null;
   return s;
 }
@@ -61,10 +63,13 @@ function genIdx(s, chain) {
   check('빈 칸으로는 옮겨짐', r.type === 'move' && s.cells[40] && s.cells[30] === null);
 
   var g = genIdx(s, 'oden');
-  r = B.drop(D, s, 40, g);
-  check('생성기 위에는 놓을 수 없음', r.type === 'none' && s.cells[g].kind === 'gen' && s.cells[40]);
-
-  check('생성기는 드래그할 수 없음', B.drop(D, s, g, 41).type === 'none');
+  r = B.drop(D, s, g, 41);
+  check('생성기를 빈 칸으로 옮길 수 있음', r.type === 'move' && s.cells[41].kind === 'gen' && s.cells[g] === null);
+  r = B.drop(D, s, 41, 40);
+  check('생성기와 아이템은 자리를 바꿈', r.type === 'swap' && s.cells[40].kind === 'gen' && s.cells[41].kind === 'item');
+  var g2 = genIdx(s, 'gukbap');
+  r = B.drop(D, s, 41, g2);
+  check('아이템을 생성기 위에 놓으면 자리를 바꿈 (합치지 않음)', r.type === 'swap' && s.cells[41].kind === 'gen' && s.cells[g2].kind === 'item');
 })();
 
 // --- 생성기 ---
@@ -74,9 +79,12 @@ function genIdx(s, chain) {
   var rng = G.makeRng(1);
   var r = B.spawn(s, g, rng);
   check('생성기 탭 → 빈 칸에 1단계', r.ok && s.cells[r.idx].lv === 1 && s.cells[r.idx].chain === 'oden');
-  var gc = B.col(s, g), gr = B.row(s, g);
-  var d = Math.abs(B.col(s, r.idx) - gc) + Math.abs(B.row(s, r.idx) - gr);
-  check('생성기 바로 옆 칸에 생김', d === 1);
+  var spots = {};
+  var t = emptyBoard(), tg = genIdx(t, 'oden'), tr = G.makeRng(5);
+  for (var k = 0; k < 20; k++) {
+    var x = B.spawn(t, tg, tr); spots[x.idx] = 1; B.remove(t, x.idx);
+  }
+  check('빈 칸 아무 데나 나옴 (20번 중 여러 자리)', Object.keys(spots).length >= 8);
 
   var before = B.itemCount(s);
   while (!B.isFull(s)) B.spawn(s, g, rng);
@@ -84,6 +92,35 @@ function genIdx(s, chain) {
   r = B.spawn(s, g, rng);
   check('가득 차면 생성 불가', !r.ok && r.reason === 'full');
   check('생성기가 아닌 칸은 생성 불가', !B.spawn(s, 20, rng).ok);
+})();
+
+// --- 닫힌 칸 (확장 단계별 보드 크기) ---
+(function () {
+  function openCount(s) { return s.open.filter(function (o) { return o; }).length; }
+  var s = B.create(D);
+  check('처음은 5×6 = 30칸 열림', openCount(s) === 30);
+  check('맨 왼쪽·오른쪽 줄은 닫힘', !B.isOpen(s, B.idx(s, 0, 0)) && !B.isOpen(s, B.idx(s, 6, 3)));
+  check('아래 3줄은 닫힘', !B.isOpen(s, B.idx(s, 3, 6)) && !B.isOpen(s, B.idx(s, 3, 8)) && B.isOpen(s, B.idx(s, 3, 5)));
+  var gensOpen = s.cells.every(function (c, i) { return !c || B.isOpen(s, i); });
+  check('생성기·시작 재료는 열린 칸에 있음', gensOpen);
+
+  var rng = G.makeRng(2), g = genIdx(s, 'oden'), inLocked = false;
+  while (!B.isFull(s)) {
+    var r = B.spawn(s, g, rng);
+    if (!B.isOpen(s, r.idx)) inLocked = true;
+  }
+  check('재료는 닫힌 칸에 생기지 않음', !inLocked);
+  check('열린 칸이 다 차면 가득 참', B.itemCount(s) + D.generators.length === 30 && !B.spawn(s, g, rng).ok);
+
+  var it = s.cells.findIndex(function (c) { return c && c.kind === 'item'; });
+  check('닫힌 칸으로는 못 옮김', B.drop(D, s, it, B.idx(s, 0, 2)).type === 'none' && s.cells[it]);
+
+  var opened = B.setStage(D, s, 1);
+  check('확장 1단계: 7×6 = 42칸, 새로 12칸 열림', openCount(s) === 42 && opened.length === 12);
+  check('확장 1단계: 아래 3줄은 아직 닫힘', !B.isOpen(s, B.idx(s, 0, 6)));
+  opened = B.setStage(D, s, 2);
+  check('확장 2단계: 7×9 전부, 새로 21칸 열림', openCount(s) === 63 && opened.length === 21);
+  check('확장 뒤 다시 생성 가능', B.spawn(s, g, rng).ok);
 })();
 
 // --- 길게 눌러 삭제 ---

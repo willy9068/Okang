@@ -2,13 +2,15 @@
 // 칸 하나는 null(빈 칸) 또는
 //   { kind: 'item', chain: 'oden', lv: 1, id: 7 }
 //   { kind: 'gen',  chain: 'oden', id: 1 }
+// s.open[i] = 그 칸이 열려 있는가 (가게 확장 단계에 따라 넓어짐, data.board.openByStage)
 var G = G || {};
 
 G.Board = {
   create: function (data) {
     var b = data.board;
-    var s = { cols: b.cols, rows: b.rows, cells: [], nextId: 1 };
+    var s = { cols: b.cols, rows: b.rows, cells: [], open: [], nextId: 1 };
     for (var i = 0; i < b.cols * b.rows; i++) s.cells.push(null);
+    G.Board.setStage(data, s, 0);
     var k;
     for (k = 0; k < data.generators.length; k++) {
       var g = data.generators[k];
@@ -21,6 +23,21 @@ G.Board = {
     }
     return s;
   },
+
+  // 확장 단계에 맞춰 열린 칸을 정함. 결과: 이번에 새로 열린 칸 번호 목록
+  setStage: function (data, s, stage) {
+    var list = data.board.openByStage;
+    var a = list[Math.min(stage, list.length - 1)], opened = [];
+    for (var i = 0; i < s.cols * s.rows; i++) {
+      var c = G.Board.col(s, i), r = G.Board.row(s, i);
+      var open = c >= a.c0 && c <= a.c1 && r >= a.r0 && r <= a.r1;
+      if (open && s.open[i] === false) opened.push(i);
+      s.open[i] = open;
+    }
+    return opened;
+  },
+
+  isOpen: function (s, i) { return i >= 0 && i < s.cells.length && s.open[i] !== false; },
 
   idx: function (s, col, row) { return row * s.cols + col; },
   col: function (s, i) { return i % s.cols; },
@@ -38,11 +55,14 @@ G.Board = {
       a.chain === b.chain && a.lv === b.lv && a.lv < G.Board.maxLv(data, a.chain));
   },
 
-  emptyCount: function (s) {
-    var n = 0;
-    for (var i = 0; i < s.cells.length; i++) if (!s.cells[i]) n++;
-    return n;
+  // 열린 빈 칸 목록
+  emptyCells: function (s) {
+    var out = [];
+    for (var i = 0; i < s.cells.length; i++) if (!s.cells[i] && G.Board.isOpen(s, i)) out.push(i);
+    return out;
   },
+
+  emptyCount: function (s) { return G.Board.emptyCells(s).length; },
 
   isFull: function (s) { return G.Board.emptyCount(s) === 0; },
 
@@ -52,33 +72,24 @@ G.Board = {
     return n;
   },
 
-  // 생성기 탭: 생성기에서 가장 가까운 빈 칸에 1단계 재료를 만든다.
-  // 거리가 같은 칸이 여럿이면 시드 난수로 고른다.
+  // 생성기 탭: 열린 빈 칸 중 아무 데나(시드 난수) 1단계 재료를 만든다.
   // 결과: { ok: true, idx: 칸 번호, item } / { ok: false, reason: 'full' | 'notGen' }
   spawn: function (s, genIdx, rng) {
     var g = s.cells[genIdx];
     if (!g || g.kind !== 'gen') return { ok: false, reason: 'notGen' };
-    var gc = G.Board.col(s, genIdx), gr = G.Board.row(s, genIdx);
-    var best = [], bestD = Infinity;
-    for (var i = 0; i < s.cells.length; i++) {
-      if (s.cells[i]) continue;
-      var dc = G.Board.col(s, i) - gc, dr = G.Board.row(s, i) - gr;
-      var d = dc * dc + dr * dr;
-      if (d < bestD) { bestD = d; best = [i]; }
-      else if (d === bestD) best.push(i);
-    }
-    if (!best.length) return { ok: false, reason: 'full' };
-    var pick = best[Math.floor(rng() * best.length)];
+    var empty = G.Board.emptyCells(s);
+    if (!empty.length) return { ok: false, reason: 'full' };
+    var pick = empty[Math.floor(rng() * empty.length)];
     var item = G.Board.newItem(s, g.chain, 1);
     s.cells[pick] = item;
     return { ok: true, idx: pick, item: item };
   },
 
-  // 드래그한 아이템을 다른 칸에 놓기.
+  // 끌어 온 아이템·생성기를 다른 칸에 놓기 (닫힌 칸에는 못 놓음).
   // 결과 type: 'move'(빈 칸) / 'merge'(합성) / 'swap'(자리 바꿈) / 'none'(아무 일 없음)
   drop: function (data, s, from, to) {
     var a = s.cells[from];
-    if (from === to || !a || a.kind !== 'item' || to < 0 || to >= s.cells.length) return { type: 'none' };
+    if (from === to || !a || !G.Board.isOpen(s, to)) return { type: 'none' };
     var b = s.cells[to];
     if (!b) {
       s.cells[to] = a; s.cells[from] = null;
@@ -89,11 +100,8 @@ G.Board = {
       s.cells[to] = m; s.cells[from] = null;
       return { type: 'merge', idx: to, item: m };
     }
-    if (b.kind === 'item') {
-      s.cells[to] = a; s.cells[from] = b;
-      return { type: 'swap', idx: to };
-    }
-    return { type: 'none' };   // 생성기 위에는 놓을 수 없음
+    s.cells[to] = a; s.cells[from] = b;
+    return { type: 'swap', idx: to };
   },
 
   // 길게 눌러 삭제 (생성기는 삭제 불가)
@@ -117,7 +125,7 @@ G.Board = {
     return { cols: s.cols, rows: s.rows, nextId: s.nextId, cells: s.cells };
   },
 
-  // 저장 데이터가 지금 보드 크기와 다르면 null (새로 시작)
+  // 저장 데이터가 지금 보드 크기와 다르면 null (새로 시작). 열린 칸은 불러온 뒤 setStage로 정함
   deserialize: function (data, o) {
     if (!o || o.cols !== data.board.cols || o.rows !== data.board.rows ||
         !o.cells || o.cells.length !== o.cols * o.rows) return null;
@@ -125,6 +133,6 @@ G.Board = {
       var c = o.cells[i];
       if (c && !data.chains[c.chain]) return null;
     }
-    return { cols: o.cols, rows: o.rows, nextId: o.nextId || 1, cells: o.cells };
+    return { cols: o.cols, rows: o.rows, nextId: o.nextId || 1, cells: o.cells, open: [] };
   }
 };

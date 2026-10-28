@@ -165,7 +165,7 @@ G.UI = {
       var n = o.needs.length, size = n === 1 ? 64 : 54;
       o.needs.forEach(function (need, k2) {
         var cx = n === 1 ? r.w / 2 : r.w / 2 + (k2 === 0 ? -36 : 36);
-        var cy = by + 50;
+        var cy = by + 40;
         ctx.save();
         if (need.done) ctx.globalAlpha = 0.35;
         G.UI.drawCell(ctx, D, C, { kind: 'item', chain: need.chain, lv: need.lv }, cx, cy, size);
@@ -176,14 +176,14 @@ G.UI = {
       // 보상 또는 내기
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (ready) {
-        G.UI.roundRect(ctx, r.w / 2 - 44, r.h - 34, 88, 26, 10);
+        G.UI.roundRect(ctx, r.w / 2 - 44, by + 75, 88, 26, 10);
         ctx.fillStyle = C.teal; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
         ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 14px sans-serif';
-        ctx.fillText(D.texts.serveReady + ' +' + o.reward, r.w / 2, r.h - 21);
+        ctx.fillText(D.texts.serveReady + ' +' + o.reward, r.w / 2, by + 88);
       } else {
-        ctx.fillStyle = C.outline; ctx.font = 'bold 14px sans-serif';
-        ctx.fillText('+' + o.reward, r.w / 2, r.h - 21);
+        ctx.fillStyle = C.outline; ctx.font = 'bold 15px sans-serif';
+        ctx.fillText('+' + o.reward, r.w / 2, by + 88);
       }
       ctx.restore();
     });
@@ -280,6 +280,7 @@ G.UI = {
         ctx.fillStyle = C.cell; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = C.cellRim; ctx.stroke();
       }
+      if (!G.Board.isOpen(s, i)) G.UI.drawLocked(ctx, C, r);
     }
 
     // 합칠 수 있는 칸: 노란 점선 테두리 (드래그 중)
@@ -296,7 +297,7 @@ G.UI = {
       ctx.restore();
     }
     // 손가락 아래 칸
-    if (hover >= 0 && hover !== inp.from) {
+    if (hover >= 0 && hover !== inp.from && G.Board.isOpen(s, hover)) {
       var hr = G.cellRect(hover);
       var ok = targets.indexOf(hover) >= 0;
       G.UI.roundRect(ctx, hr.x + 2, hr.y + 2, hr.w - 4, hr.h - 4, 10);
@@ -326,12 +327,23 @@ G.UI = {
       // 길게 누르는 중이면 조금 작아짐
       var press = (inp && !inp.drag && !inp.done && inp.from === i && c.kind === 'item');
       if (press) k *= 0.92;
+      if (c.kind === 'gen') G.UI.drawGenGlow(ctx, D, C, x + r.w / 2, y + r.h / 2, r.w, now, c.id);
       G.UI.drawCell(ctx, D, C, c, x + r.w / 2, y + r.h / 2, r.w * D.board.itemScale * k);
       if (press) G.UI.drawPressRing(ctx, C, r, (now - inp.t0) / D.input.longPressMs);
     }
 
     // 연출: 합성 반짝, 삭제 연기
     G.anims.forEach(function (a) {
+      if (a.type === 'unlock') {
+        var ut = (now - a.t0) / a.dur, ur = G.cellRect(a.idx);
+        ctx.save();
+        ctx.globalAlpha = 1 - ut;
+        G.UI.roundRect(ctx, ur.x + 2, ur.y + 2, ur.w - 4, ur.h - 4, 10);
+        ctx.fillStyle = 'rgba(255,214,120,0.55)'; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = C.mergeGlow; ctx.stroke();
+        ctx.restore();
+        return;
+      }
       if (a.type !== 'spark' && a.type !== 'poof') return;
       var t = (now - a.t0) / a.dur, ar = G.cellRect(a.idx);
       var cx = ar.x + ar.w / 2, cy = ar.y + ar.h / 2;
@@ -365,6 +377,54 @@ G.UI = {
         ctx.restore();
       }
     }
+  },
+
+  // 닫힌 칸: 어둡게 덮고 가운데 작은 자물쇠 (확장하면 열림)
+  drawLocked: function (ctx, C, r) {
+    var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+    G.UI.roundRect(ctx, r.x + 2, r.y + 2, r.w - 4, r.h - 4, 10);
+    ctx.fillStyle = C.locked; ctx.fill();
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#C9B48A';
+    ctx.beginPath(); ctx.arc(cx, cy - 4, 7, Math.PI, 0); ctx.stroke();   // 고리
+    G.UI.roundRect(ctx, cx - 10, cy - 4, 20, 15, 3);                    // 몸통
+    ctx.fillStyle = '#C9B48A'; ctx.fill();
+    ctx.fillStyle = '#3A3028';
+    ctx.fillRect(cx - 1.5, cy + 1, 3, 6);                                  // 열쇠 구멍
+    ctx.restore();
+  },
+
+  // 생성기 뒤 노란 빛 (천천히 커졌다 작아짐) + 가끔 작은 별
+  drawGenGlow: function (ctx, D, C, cx, cy, size, now, id) {
+    var g = D.genGlow;
+    var p = 0.5 + 0.5 * Math.sin(now / g.pulseMs * Math.PI * 2);
+    var rad = size * (0.52 + 0.1 * p);
+    ctx.save();
+    var rg = ctx.createRadialGradient(cx, cy, size * 0.2, cx, cy, rad);
+    rg.addColorStop(0, 'rgba(255,200,87,' + (0.35 + 0.25 * p) + ')');
+    rg.addColorStop(1, 'rgba(255,200,87,0)');
+    ctx.fillStyle = rg;
+    ctx.fillRect(cx - rad, cy - rad, rad * 2, rad * 2);
+    // 별: 생성기마다 시간을 조금 어긋나게
+    var t = (now + id * 700) % g.starEveryMs;
+    if (t < g.starMs) {
+      var k = Math.sin(t / g.starMs * Math.PI);
+      var sx = cx + size * 0.3, sy = cy - size * 0.3, ss = size * 0.45 * k;
+      var fx = G.UI.img('fx_merge');
+      ctx.globalAlpha = k;
+      if (fx) ctx.drawImage(fx, sx - ss / 2, sy - ss / 2, ss, ss);
+      else {
+        ctx.fillStyle = '#FFF3C4';
+        ctx.beginPath();
+        for (var n = 0; n < 8; n++) {
+          var ang = n * Math.PI / 4, rr = n % 2 ? ss * 0.15 : ss * 0.5;
+          ctx.lineTo(sx + Math.cos(ang) * rr, sy + Math.sin(ang) * rr);
+        }
+        ctx.closePath(); ctx.fill();
+      }
+    }
+    ctx.restore();
   },
 
   // 아이템 또는 생성기 하나 (가운데 cx, cy, 크기 size)
@@ -456,16 +516,33 @@ G.UI = {
     return out;
   },
 
+  // 어둡게 만든 그림 (한 번 만들어 두고 다시 씀). 비쳐 보이지 않게 투명도 대신 색을 어둡게
+  dimCache: {},
+  dimmed: function (name, im) {
+    if (G.UI.dimCache[name]) return G.UI.dimCache[name];
+    var c = document.createElement('canvas');
+    c.width = im.width; c.height = im.height;
+    var x = c.getContext('2d');
+    x.drawImage(im, 0, 0);
+    x.globalCompositeOperation = 'source-atop';
+    x.fillStyle = 'rgba(15,12,30,0.55)';
+    x.fillRect(0, 0, c.width, c.height);
+    G.UI.dimCache[name] = c;
+    return c;
+  },
+
   // 인물 한 명 (active = 말하는 중이면 밝고 조금 크게)
   drawPortrait: function (ctx, D, C, who, active) {
     var r = D.storyLayout[who];
     ctx.save();
-    ctx.globalAlpha *= active ? 1 : 0.4;
+    var dimNoImg = !active && !G.UI.img('char_' + who);
+    if (dimNoImg) ctx.globalAlpha *= 0.4;
     var k = active ? 1.04 : 1;
     ctx.translate(r.x + r.w / 2, r.y + r.h);
     ctx.scale(k, k);
     ctx.translate(-r.w / 2, -r.h);
     var im = G.UI.img('char_' + who);
+    if (im && !active) im = G.UI.dimmed('char_' + who, im);
     if (im) {
       var s = Math.min(r.w / im.width, r.h / im.height);
       ctx.drawImage(im, (r.w - im.width * s) / 2, r.h - im.height * s, im.width * s, im.height * s);
@@ -536,7 +613,7 @@ G.UI = {
       var name = D.names[who];
       ctx.font = 'bold 17px sans-serif';
       var nw = ctx.measureText(name).width + 34;
-      var nx = who === 'father' ? B.x + 18 : B.x + B.w - 18 - nw;
+      var nx = who === 'father' ? B.x + B.pad - 10 : B.x + B.w - B.pad + 10 - nw;   // 모서리 장식 안쪽
       G.UI.roundRect(ctx, nx, B.y - 18, nw, 34, 12);
       ctx.fillStyle = C.navy; ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
@@ -552,17 +629,17 @@ G.UI = {
     ctx.font = (mono ? 'italic ' : '') + '19px sans-serif';
     ctx.fillStyle = mono ? C.mono : (who === 'narr' ? '#5A4A3A' : C.outline);
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    var lines = G.UI.wrap(ctx, full, B.w - 48), shown = 0;
+    var lines = G.UI.wrap(ctx, full, B.w - 2 * B.pad), shown = 0;
     lines.forEach(function (l, i) {
       var part = l.slice(0, Math.max(0, n - shown));
       shown += l.length + 1;   // 줄바꿈 자리의 띄어쓰기 몫
-      ctx.fillText(part, B.x + 24, B.y + 34 + i * 30);
+      ctx.fillText(part, B.x + B.pad, B.y + B.padTop + i * 30);
     });
     if (c.kind === 'line' && n >= full.length && Math.floor(now / 400) % 2 === 0) {
       ctx.fillStyle = mono ? C.mono : C.navy;
       ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
       ctx.font = '16px sans-serif';
-      ctx.fillText(D.texts.tapNext, B.x + B.w - 20, B.y + B.h - 14);
+      ctx.fillText(D.texts.tapNext, B.x + B.w - B.pad, B.y + B.h - 24);
     }
 
     // 선택지 3개

@@ -72,6 +72,7 @@ function play(seed) {
   while (st.expand < D.expand.costs.length && steps++ < 20000) {
     if (G.Expand.can(D, st)) {
       G.Expand.apply(D, st);
+      B.setStage(D, st.board, st.expand);   // 확장하면 보드도 넓어짐
       stageT.push(t); stageServed.push(st.served - lastServed); lastServed = st.served;
       t = 0;
       continue;

@@ -272,6 +272,10 @@ G.tapExpand = function () {
   if (r === 'noMoney') { G.showHint(D.texts.noMoney, 1500); return; }
   if (r !== 'ok') return;
   G.addAnim({ type: 'expand', dur: 900 });
+  // 보드도 넓어짐: 새로 열린 칸 반짝
+  G.Board.setStage(D, s.board, s.expand).forEach(function (i) {
+    G.addAnim({ type: 'unlock', idx: i, dur: 800 });
+  });
   G.showHint(D.texts.expandDone[s.expand], 3000);
   // 확장 연출이 끝나면 그 단계의 스토리를 엶
   var next = D.story.afterExpand[s.expand] || [];
@@ -325,7 +329,7 @@ G.onMove = function (e) {
   if (inp.scene || inp.from === undefined) return;
   var c = G.state.board.cells[inp.from];
   var moved = Math.abs(p.x - inp.x0) + Math.abs(p.y - inp.y0) > G.DATA.input.dragStartPx;
-  if (!inp.drag && moved && c && c.kind === 'item') {
+  if (!inp.drag && moved && c) {   // 아이템과 생성기 모두 끌 수 있음
     inp.drag = true;
     inp.targets = G.Board.mergeTargets(G.DATA, G.state.board, inp.from);
     inp.orderTargets = [];
@@ -356,7 +360,7 @@ G.onUp = function (e) {
   if (!c) return;
   if (inp.drag) {
     var oi = G.orderAt(p.x, p.y);
-    if (oi >= 0) G.deliverItem(inp.from, oi);
+    if (oi >= 0 && c.kind === 'item') G.deliverItem(inp.from, oi);
     else G.dropItem(inp.from, G.cellAt(p.x, p.y));
   } else if (c.kind === 'gen') {
     G.tapGenerator(inp.from);
@@ -425,6 +429,7 @@ G.start = function () {
     if (typeof saved.rng === 'number') G.rng.setState(saved.rng);
     G.state = saved;
     delete G.state.rng;
+    G.Board.setStage(G.DATA, G.state.board, G.state.expand);
     if (!G.state.orders) { G.state.orders = []; G.Order.fillAll(G.DATA, G.state, G.rng); }
   } else {
     G.newGame();
