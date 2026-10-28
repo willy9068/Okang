@@ -379,8 +379,10 @@ G.UI = {
     }
   },
 
-  // 닫힌 칸: 어둡게 덮고 가운데 작은 자물쇠 (확장하면 열림)
+  // 닫힌 칸: ui_lock 그림, 없으면 어둡게 덮고 가운데 작은 자물쇠 (확장하면 열림)
   drawLocked: function (ctx, C, r) {
+    var lockIm = G.UI.img('ui_lock');
+    if (lockIm) { ctx.drawImage(lockIm, r.x + 2, r.y + 2, r.w - 4, r.h - 4); return; }
     var cx = r.x + r.w / 2, cy = r.y + r.h / 2;
     G.UI.roundRect(ctx, r.x + 2, r.y + 2, r.w - 4, r.h - 4, 10);
     ctx.fillStyle = C.locked; ctx.fill();
@@ -484,8 +486,9 @@ G.UI = {
   // ---------- 스토리 (대화창 오버레이) ----------
 
   // 기억 장면 배경: 밤 + 등불 (bg_memory 이미지가 있으면 그것)
-  drawNight: function (ctx, D, C) {
-    var im = G.UI.img('bg_memory');
+  // name: 쓸 배경 그림 이름 (없으면 bg_memory, 그것도 없으면 코드로 그린 밤)
+  drawNight: function (ctx, D, C, name) {
+    var im = (name && G.UI.img(name)) || G.UI.img('bg_memory');
     if (im) { ctx.drawImage(im, 0, 0, D.view.w, D.view.h); return; }
     var g = ctx.createLinearGradient(0, 0, 0, D.view.h);
     g.addColorStop(0, C.night); g.addColorStop(1, C.nightDeep);
@@ -587,7 +590,7 @@ G.UI = {
     var run = G.story.run, c = G.Story.current(run);
     if (c.kind === 'end') return;
     var who = c.kind === 'line' ? c.who : 'father';   // 고르는 동안은 '나'가 밝게
-    G.UI.drawNight(ctx, D, C);
+    G.UI.drawNight(ctx, D, C, D.story.bg[run.id]);
     G.UI.drawPortrait(ctx, D, C, 'father', who === 'father');
     G.UI.drawPortrait(ctx, D, C, 'mother', who === 'mother');
 

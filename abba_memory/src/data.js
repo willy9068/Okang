@@ -114,7 +114,9 @@ G.DATA = {
     afterExpand: [null, ['story1'], ['story2', 'ending']],   // 확장 단계별로 이어서 볼 장면
     delayMs: 900,                       // 확장 연출이 끝나고 대화창이 뜨기까지
     charsPerSec: 32,                    // 한 글자씩 나오는 속도
-    fadeMs: 250                         // 대화창 나타나는 시간
+    fadeMs: 250,                        // 대화창 나타나는 시간
+    // 스토리별 배경 그림. 파일이 없으면 bg_memory(밤 시장 골목)
+    bg: { intro: 'bg_memory', story1: 'bg_story1', story2: 'bg_story2', ending: 'bg_story2' }
   },
 
   // 스토리 화면 배치 (540×960 좌표)
@@ -194,6 +196,7 @@ G.DATA = {
     'cust_1', 'cust_2', 'cust_3', 'cust_4',
     'ui_order', 'ui_button', 'ui_expand',
     'char_father', 'char_mother', 'char_father_smile', 'char_mother_smile',
-    'ui_dialog', 'bg_memory'
+    'ui_dialog', 'bg_memory',
+    'ui_lock', 'bg_story1', 'bg_story2'   // 2차 요청 (없으면 코드 그림 / bg_memory)
   ]
 };

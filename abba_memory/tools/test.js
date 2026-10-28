@@ -320,6 +320,8 @@ function makeState() {
   // 확장 단계별로 볼 스토리가 data.js에 맞게 있음
   var okIds = true;
   D.story.afterExpand.forEach(function (ids) { (ids || []).forEach(function (id) { if (!G.STORY[id]) okIds = false; }); });
+  var bgOk = Object.keys(G.STORY).every(function (id) { return D.images.indexOf(D.story.bg[id]) >= 0; });
+  check('스토리마다 배경 그림 이름이 있고 이미지 목록에 들어 있음', bgOk);
   check('확장 뒤 스토리 id가 모두 있음', okIds && !!G.STORY[D.story.intro] && D.story.afterExpand.length === D.expand.costs.length + 1);
 })();
 
