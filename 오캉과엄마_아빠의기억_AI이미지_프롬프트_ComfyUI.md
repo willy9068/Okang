@@ -1,6 +1,6 @@
 # 오캉과 엄마: 아빠의 기억 — 아트 스타일 · 이미지 목록 · AI 이미지 프롬프트 (ComfyUI용)
 
-> 2026-10-28 · 양식은 `스톱앤스케치_AI이미지_프롬프트_ComfyUI.md`를 따랐습니다. 프롬프트는 영어로 썼습니다(대부분의 모델이 영어에서 안정적).
+> 2026-10-28 (2차 요청: 8장) · 양식은 `스톱앤스케치_AI이미지_프롬프트_ComfyUI.md`를 따랐습니다. 프롬프트는 영어로 썼습니다(대부분의 모델이 영어에서 안정적).
 > 아트 기준 이미지: `따뜻한 한식당 요리 게임 화면-3.png`(기본 톤), `전통 시장 경매 게임 UI-2.png`·`등불이 빛나는 유령 던전 퍼즐 UI-1.png`(UI 틀, 밤 장면).
 > 저는 이미지를 직접 만들 수 없고 ComfyUI도 실행해 보지 못했습니다. **결과가 어떻게 나오는지는 확인하지 못했으니** 첫날 3장 시험(0-1)으로 먼저 확인하세요.
 > 게임 안 파일 이름은 3장 표와 `abba_memory/README.md`의 이름 규칙이 같습니다. 파일이 없으면 게임은 색 블록으로 돌아갑니다.
@@ -38,11 +38,11 @@
 |---|---|
 | 기본 톤 | **한식당 낮 톤** (참고 3번): 따뜻한 나무, 크림색 벽, 오후 햇살, 부드러운 명암 |
 | UI 틀 | **남색 + 금색 테두리** (참고 1·2번): 상단 HUD, 버튼, 대화창, 패널 |
-| 기억(스토리) 장면 | **밤 + 등불 빛** (참고 1번): 남보라 밤하늘, 노란 등불. 대화창 뒤 배경만 이 톤 |
+| 기억(스토리) 장면 | **밤 + 따뜻한 불빛** (참고 1번의 색): 남보라 밤하늘, 노란 불빛. 불빛은 **백열전구 줄·포장마차 천막** (종이 등롱은 일본풍이라 쓰지 않음, 8-0). 대화창 뒤 배경만 이 톤 |
 | 인물 | 2~2.5등신 귀여운 캐릭터, 굵은 진갈색 외곽선, 큰 머리, 점 눈에 가까운 둥근 눈 |
 | 아버지 | 참고 1번의 **젊은 남자** 기준: 20대 후반 한국 남성, 짧은 검은 머리, 콧수염 없음, 분홍 셔츠 + 초록 멜빵바지 |
 | 어머니(태자) | **20대 중반 한국 여성** (원작 김태자, 현재 57세 → 1990년 기준). 부산 시장 상인 집안의 씩씩한 인상. 배우와 닮지 않게 |
-| 시대·장소 | 1990년 부산 시장 골목, 바다가 가까운 동네. 함석·나무·타일·연탄난로·브라운관 TV 같은 소재 |
+| 시대·장소 | 1990년 부산 시장 골목, 바다가 가까운 동네. 함석·나무·타일·연탄난로·브라운관 TV 같은 소재. **한국 단서·일본풍 금지 목록은 8-0** |
 | 아이템 | 투명 배경 단독 물체. 칸(쟁반)은 별도 이미지 1장을 코드가 반복 사용 |
 | 화면 | **세로 1080×1920 (9:16).** 코드는 540×960 좌표로 그리고 2배 이미지를 씁니다 |
 | 금지 | 가로 UI, 3D 렌더, 사진, 글자, 요즘 물건, 실제 배우 얼굴 |
@@ -92,7 +92,7 @@ modern car, neon, glossy plastic, horror, dark gloomy
 
 ---
 
-## 3. 이미지 목록과 파일 규격 (총 33장, 최소 구성 19장)
+## 3. 이미지 목록과 파일 규격 (1차 33장, 최소 구성 19장 · 2차 추가는 8-3)
 
 우선순위: ★=1~2일차에 필요(보드·가게) / ☆=3~5일차(스토리·UI) / ○=여유 있을 때
 최소 구성 = ★ 전부 + 인물 2장 + 대화창.
@@ -105,9 +105,9 @@ modern car, neon, glossy plastic, horror, dark gloomy
 | 12 | 생성기: 가마솥 (돼지국밥) | gen_gukbap.png | 256×256 | 투명 | ★ |
 | 13 | 보드 칸 (검은 쟁반) | ui_cell.png | 128×128 | 투명 | ★ |
 | 14 | 보드 판 (나무 카운터) | ui_board.png | 1080×1200 | 투명 | ★ |
-| 15 | 가게: 처음 상태 | shop_0.png | 1080×660 | 있음 | ★ |
-| 16 | 가게: 1단계 확장 | shop_1.png | 1080×660 | 있음 | ★ |
-| 17 | 가게: 2단계 확장 | shop_2.png | 1080×660 | 있음 | ★ |
+| 15 | 가게: 처음 상태 | shop_0.png | 1080×660 | 있음 | ★ ✏️ 다시 (8-2) |
+| 16 | 가게: 1단계 확장 | shop_1.png | 1080×660 | 있음 | ★ ✏️ 다시 (8-2) |
+| 17 | 가게: 2단계 확장 | shop_2.png | 1080×660 | 있음 | ★ ✏️ 다시 (8-2) |
 | 18~21 | 손님 4명 (상반신) | cust_1 ~ cust_4.png | 256×256 | 투명 | ★ |
 | 22 | 주문 말풍선 | ui_order.png | 256×256 | 투명 | ☆ |
 | 23 | 돈 아이콘 (동전) | ui_coin.png | 96×96 | 투명 | ☆ |
@@ -117,10 +117,12 @@ modern car, neon, glossy plastic, horror, dark gloomy
 | 27 | 아버지 기본 (상반신) | char_father.png | 768×1024 | 투명 | ☆ (최소) |
 | 28 | 어머니(태자) 기본 (상반신) | char_mother.png | 768×1024 | 투명 | ☆ (최소) |
 | 29 | 대화창 (9분할용) | ui_dialog.png | 1024×384 | 투명 | ☆ (최소) |
-| 30 | 기억 장면 배경 (밤 시장 골목) | bg_memory.png | 1080×1920 | 있음 | ☆ |
+| 30 | 기억 장면 배경 (밤 시장 골목) | bg_memory.png | 1080×1920 | 있음 | ☆ ✏️ 다시 (8-1) |
 | 31 | 합성 반짝 효과 | fx_merge.png | 256×256 | 투명 | ○ |
 | 32 | 아버지 웃음 (표정 차분) | char_father_smile.png | 768×1024 | 투명 | ○ |
 | 33 | 어머니 웃음 (표정 차분) | char_mother_smile.png | 768×1024 | 투명 | ○ |
+
+상태 (2026-10-28 2차): ✏️ = 1차 그림이 일본풍이라 8장 프롬프트로 다시 그림. 새로 필요한 #34~37은 **8-3**.
 
 ※ 숫자(돈, 주문 보상), 이름표, 간판 글자, 길게 누르기 원형 게이지, 합칠 수 있음 노란 테두리는 **코드로** 그립니다.
 ※ 아이템 단계 이름은 개발 가이드 4-1의 **임시** 이름입니다. 이름이 바뀌면 프롬프트 묘사만 바꾸고 파일명(단계 번호)은 그대로 둡니다.
@@ -237,6 +239,8 @@ colors, on a plain white background, isolated, centered
 메모: 참고 3번 하단의 검은 쟁반이 기준입니다. ui_cell은 코드가 63번 반복해서 깔기 때문에 **무늬가 없고 단순할수록** 좋습니다. ui_board는 안쪽이 비어야 합니다.
 
 ### 4-6. 가게 3단계 (#15~17) — 첫 3장 시험 ③은 shop_0
+> **2026-10-28: 1차 그림이 일본 가정집처럼 나와서 8-2의 새 프롬프트로 다시 그립니다.** 아래는 1차 기록용으로 남겨 둡니다 (`noren curtain` 같은 일본풍 단어가 원인 중 하나, 8-0).
+
 **구도는 세 장 모두 같게** (같은 시드, 묘사만 바꿈). 정면에서 본 작은 식당 안쪽, 아래 1/3에 카운터, 뒤쪽 벽에 창문과 선반.
 ```
 (shop_0 처음 상태)
@@ -276,6 +280,8 @@ no people
 메모: 참고 3번처럼 **카운터 위로 머리와 손만** 보이는 구도가 됩니다. 손은 넣어도 되지만 손가락이 이상하면 어깨까지만 씁니다.
 
 ### 4-8. 기억 장면 배경 (#30)
+> **2026-10-28: 1차 그림이 일본 풍경처럼 나와서 8-1의 새 프롬프트로 다시 그립니다.** 아래는 1차 기록용입니다 (`paper lanterns`가 원인 중 하나, 8-0).
+
 ```
 vertical scene, a narrow Busan market alley at night in 1990, closed shop
 shutters, warm yellow paper lanterns hanging in a row, soft lantern glow, deep
@@ -328,6 +334,8 @@ empty center for characters, no people
 - 아버지·어머니·손님이 참고 3번 인물들과 같은 게임처럼 보이는가 (외곽선 굵기, 등신)
 - 가게 3장이 같은 구도인가, 확장 차이가 한눈에 보이는가
 - 1990년에 없던 물건이 섞이지 않았는가
+- **일본풍 단서가 섞이지 않았는가** (종이 등롱, 노렌, 나무 창살·종이 미닫이, 다다미, 기와 처마, 세로 깃발) — 2026-10-28 추가, 8-0
+- 가게 3장이 **같은 가게가 넓어지는 것**으로 보이는가 (카운터·바닥·천장 위치가 같은가) — 8-2
 - 어머니가 특정 배우를 닮지 않았는가
 
 ## 7. 선택 기록표 (제출 리소스 + "본인 경험 및 의견" 근거)
@@ -337,3 +345,187 @@ empty center for characters, no people
 | oden_1 | | | | | | |
 | shop_0 | | | | | | |
 (이후 행 추가)
+
+---
+
+## 8. 2차 이미지 요청 (2026-10-28, 1차 33장을 게임에 넣어 본 뒤)
+
+> 근거: 사용자가 1차 33장을 `abba_memory/assets/`에 넣고 게임에서 확인한 의견.
+> - `bg_memory`가 **일본 풍경** 같다 → 한국 부산 시장 거리로
+> - `shop_0~2`가 가게보다 **일본 가정집** 같다 → 한국 부산 시장 음식점으로, 그리고 **확장되는 느낌**으로
+> - 필요한 이미지가 더 있으면 추가
+
+### 8-0. 왜 일본풍으로 나왔나, 어떻게 막나
+- **1차 프롬프트 탓이 큽니다.** 4-8에 `paper lanterns hanging in a row`(종이 등롱 줄), 4-6에 `noren curtain`(일본식 가게 천)을 제가 넣었습니다. 둘 다 일본을 강하게 떠올리게 하는 단어입니다.
+- 귀여운 2D 그림체 모델은 "아시아 + 옛날 + 가게"를 일본 풍경으로 그리는 경향이 있습니다 (나무 창살, 미닫이 종이문, 기와 처마). 그래서 **한국에만 있는 물건을 구체적으로** 적고, 일본 단서를 **네거티브에 따로** 넣습니다.
+- 지금 그림 중 `gen_oden`(생선 상자)에도 작은 종이 등롱이 붙어 있습니다. 게임에서 작게 보여 급하지는 않지만, 다시 뽑는다면 등롱을 빼세요 (8-3).
+
+#### 1990년 부산 시장 음식점 단서 (넣을 것 / 뺄 것)
+| 넣을 것 (한국 1990) | 영어 표현 | 뺄 것 (일본풍) |
+|---|---|---|
+| 알루미늄 틀 미닫이 유리문 | aluminum-framed sliding glass doors | 나무 창살, 종이 미닫이문(쇼지) |
+| 작은 정사각 흰색·민트색 벽 타일 | small square white and mint-green wall tiles | 다다미, 나무 판자 벽 가득 |
+| 천장 형광등 (긴 막대 등) | fluorescent tube lights on the ceiling | 종이 등롱(초칭) |
+| 둥근 스테인리스 상 + 빨간 둥근 플라스틱 의자 | round stainless steel tables, red round plastic stools | 낮은 나무 좌식 탁자 |
+| 입구 쪽 큰 스테인리스 육수 솥 | a huge steaming stainless steel stock pot near the entrance | 라멘집 카운터 |
+| 스테인리스 물컵, 플라스틱 물병 | stainless steel water cups, plastic water pitcher | 사케 병, 도자기 술잔 |
+| 글자 없는 나무 메뉴판 | blank wooden menu boards on the wall | 세로 글씨 천 깃발 |
+| 벽걸이 선풍기, 벽 선반 위 브라운관 TV | wall-mounted electric fan, small CRT TV on a wall bracket | |
+| 줄무늬 천막 차양, 파란 방수포 | striped canvas awning, blue tarpaulin | 노렌(가게 입구 천) |
+| 함석 지붕, 셔터 내린 점포 | corrugated metal roofs, rolled-down metal shutters | 기와 처마, 도리이 |
+| 주황 천막 포장마차 불빛 | glowing orange tarp tents of street food carts | 이자카야 |
+| 전봇대와 엉킨 전깃줄, 맨 백열전구 줄 | concrete utility poles with tangled wires, bare light bulbs strung on wires | |
+| 스티로폼 생선 상자, 빨간 고무 대야 | styrofoam fish boxes, red rubber basins | |
+| 산비탈 동네 불빛 (부산 산복도로) | hillside village houses with small lit windows | 벚꽃, 신사 |
+
+#### 일본풍 네거티브 (2장 공통 네거티브 뒤에 추가)
+```
+japanese style, japan, paper lantern, chochin, noren, shoji, tatami, torii,
+shrine, japanese tiled roof, izakaya, ramen shop, sake bottle, kimono, yukata,
+sakura, kanji sign, vertical banner flag, wooden lattice window
+```
+※ 8장의 프롬프트는 모두 이 네거티브를 함께 씁니다.
+
+### 8-1. 기억 장면 배경 `bg_memory` 다시 그리기 ★ (같은 이름으로 덮어쓰기)
+밤 + 따뜻한 불빛 톤은 그대로, **불빛의 출처를 종이 등롱 → 백열전구 줄·포장마차 천막**으로 바꿉니다.
+```
+vertical scene, a Korean traditional market alley in Busan at night in 1990,
+rows of closed stalls with rolled-down metal shutters and corrugated metal
+roofs, bare warm incandescent light bulbs strung on wires across the alley,
+a glowing orange tarp tent of a street food cart at the far end, blue
+tarpaulin awnings and a big faded beach parasol over a stall, stacked
+styrofoam fish boxes and red rubber basins at the sides, concrete utility
+poles with tangled electric wires, wet concrete ground reflecting the warm
+light, in the distance a steep hillside village with small lit windows under
+a deep indigo purple night sky with a few stars, nostalgic dreamlike memory
+mood, slight soft vignette, empty center and lower half for characters,
+no people
+```
+메모
+- 가운데 아래쪽(인물이 서는 자리, y 700~1500)이 **비어 있고 어둡기가 고른 것**을 고릅니다. 1차 그림처럼 골목이 가운데로 깊게 들어가는 구도는 좋았습니다.
+- 간판은 글자 없이 나와야 합니다. 한글 비슷한 깨진 글자가 나오면 지우거나 다시 뽑습니다.
+- 고를 때 확인: 종이 등롱, 기와 처마, 세로 깃발이 없는가.
+
+### 8-2. 가게 3단계 `shop_0~2` 다시 그리기 ★ (같은 이름으로 덮어쓰기)
+
+#### 확장되는 느낌을 만드는 방법
+보드가 **처음 5×6 → 확장 1단계 양옆 열림(7×6) → 확장 2단계 아래까지 전부(7×9)** 로 넓어지는 것과 맞춰, 가게도 **가운데 작은 가게 → 양옆 이웃 칸까지 넓힘 → 안쪽 벽을 터서 뒤쪽 방까지** 로 넓어지게 합니다.
+
+| 그림 | 가게 모습 | 보드와 맞춤 |
+|---|---|---|
+| shop_0 | **가운데 1칸짜리 작은 국밥·어묵집.** 양옆은 이웃 점포의 내린 셔터와 칸막이 벽. 카운터 하나, 큰 솥 하나, 빨간 의자 2개 | 5×6 (양옆 닫힘) |
+| shop_1 | 같은 구도에서 **양옆 셔터가 올라가 이웃 칸까지 가게가 됨.** 둥근 스테인리스 상 2개, 빨간 의자, 형광등, 메뉴판 | 7×6 (양옆 열림) |
+| shop_2 | 같은 구도에서 **안쪽 벽을 터서 뒤쪽 방과 큰 창이 생김.** 창 너머 부산 항구, 손님 상 여러 개, 브라운관 TV, 달력, 글자 없는 큰 간판 틀 | 7×9 (전부) |
+
+**세 장의 구도를 똑같이 맞추는 순서 (권장)**
+1. **shop_2(가장 넓은 모습)를 먼저** 뽑아 고릅니다.
+2. shop_2를 바탕으로 **인페인트**(그림 일부만 다시 그리기)해서 **뒤쪽 방 부분을 막힌 타일 벽**으로 바꾸면 shop_1이 됩니다.
+3. shop_1을 바탕으로 **좌우 1/4씩을 이웃 점포의 내린 셔터·칸막이**로 인페인트하면 shop_0이 됩니다.
+4. 이렇게 하면 카운터·바닥·천장 위치가 세 장 모두 같아서, 게임에서 그림이 바뀔 때 **같은 가게가 넓어지는 것**으로 보입니다.
+- ComfyUI에서는 이미지 불러오기 + 마스크 + 인페인트용 노드로 할 수 있습니다. 어떤 노드·모델을 쓸 수 있는지, 다시 그리는 세기(denoise)를 얼마로 할지는 **설치 환경에 따라 다르니 직접 확인**하세요(0.6~0.8 정도에서 시작해 보는 것을 권합니다). 인페인트가 안 되면 같은 시드 + 아래 세 프롬프트로 뽑고, 카운터 위치가 가장 비슷한 것끼리 고릅니다.
+
+**공통 구도 (세 장 모두 앞에 붙임)**
+```
+front view of the inside of a small Korean restaurant in a 1990 Busan
+traditional market, seen from behind the customer counter, a long worn wooden
+counter with a stainless steel top edge across the bottom third of the image,
+the space behind the counter visible, ceiling with fluorescent tube lights at
+the top, wide horizontal composition, no people
+```
+
+**shop_2 (먼저 뽑음) — 확장 2단계**
+```
+[공통 구도] + lively expanded restaurant, the back wall opened into a second
+dining room, several round stainless steel tables with red round plastic
+stools, a big window at the back showing the Busan harbor with fishing boats
+and cranes, a huge steaming stainless steel stock pot on a gas burner at the
+left, blank wooden menu boards on the wall, a wall calendar, a small CRT
+television on a wall bracket, a wall-mounted electric fan, small square white
+and mint-green wall tiles, aluminum-framed sliding glass doors at the side,
+a large empty blank signboard frame above the back room, warm and bright,
+inviting
+```
+
+**shop_1 — 확장 1단계 (shop_2에서 뒤쪽 방을 막음)**
+```
+[공통 구도] + the same restaurant before the back room was opened, a plain
+back wall of small square white and mint-green tiles with one small window,
+the left and right neighboring stalls joined into the restaurant with their
+metal shutters rolled up, two round stainless steel tables with red round
+plastic stools on the sides, a huge steaming stainless steel stock pot on a
+gas burner at the left, blank wooden menu boards, a wall-mounted electric fan,
+clean and cheerful
+```
+인페인트로 할 때 마스크: **뒤쪽 방·큰 창·간판 틀 부분.**
+
+**shop_0 — 처음 (shop_1에서 양옆을 이웃 셔터로 막음)**
+```
+[공통 구도] + a tiny one-room restaurant stall squeezed between neighboring
+stalls, on the far left and far right the rolled-down metal shutters and
+plywood partitions of the neighbors' closed stalls, only the center space is
+the restaurant, one huge steaming stainless steel stock pot on a gas burner,
+two red round plastic stools at the counter, a single bare light bulb and one
+fluorescent tube, a plain tiled back wall with one small window, a small blank
+wooden menu board, modest and a bit worn but clean, a fresh start
+```
+인페인트로 할 때 마스크: **좌우 각 1/4 (상 2개가 있던 자리).**
+
+메모
+- **처음 가게는 '망한 가게'가 아니라 '막 차린 작은 가게'** 입니다 (용어 '복구'→'확장', 2026-10-28). 먼지·거미줄·깨진 타일은 넣지 않습니다.
+- 사람은 넣지 않습니다(손님은 코드가 `cust` 이미지를 따로 얹음). 카운터 뒤 가로 3군데(손님 머리 자리, 3-1 그림 참고)는 **큰 물건으로 가리지 않게** 고릅니다.
+- 위쪽 112px은 HUD가 덮으니 천장·형광등 정도만 오게 합니다.
+- 고를 때 확인: 나무 창살 미닫이, 종이문, 다다미, 노렌, 종이 등롱이 없는가. 가정집 거실처럼 보이지 않고 **손님이 와서 밥 먹는 곳**으로 보이는가 (둥근 상, 빨간 의자, 큰 솥, 메뉴판).
+
+### 8-3. 새로 필요한 이미지 (코드 연결 필요 표시가 있는 것은 그림을 넣은 뒤 코드에 연결)
+
+| # | 구분 | 파일명 | 크기(px) | 배경 | 우선 | 코드 |
+|---|---|---|---|---|---|---|
+| 34 | 닫힌 칸 덮개 (자물쇠 칸) | ui_lock.png | 128×128 | 투명 | ☆ | 연결 필요 (지금은 코드로 어둡게 + 자물쇠) |
+| 35 | 스토리 1 배경: 새벽 어시장 | bg_story1.png | 1080×1920 | 있음 | ○ | 연결 필요 (지금은 모든 스토리가 bg_memory) |
+| 36 | 스토리 2·마무리 배경: 간판 다는 가게 앞 | bg_story2.png | 1080×1920 | 있음 | ○ | 연결 필요 |
+| 37 | 생선 상자 생성기 (등롱 뺀 것) | gen_oden.png | 256×256 | 투명 | ○ | 덮어쓰기만 |
+
+※ 35·36은 이야기 장면마다 배경이 달라 보이게 하는 것으로, 없어도 데모는 돌아갑니다. 34는 닫힌 칸이 30칸 넘게 보이는 처음 화면의 인상을 좌우해서 ☆로 두었습니다.
+
+**ui_lock — 닫힌 칸 덮개**
+```
+a single square tile covered by a closed wooden crate lid with two metal
+straps and a small brass padlock in the center, seen from directly above,
+rounded corners, slightly darker brown so it reads as unavailable, simple,
+flat, plain white background, isolated, centered
+```
+메모: 63칸 중 최대 33칸에 반복해서 깔리므로 **무늬가 단순하고 어두운 편**이 좋습니다. `ui_cell`(쟁반)과 같은 크기·같은 모서리 둥글기로 맞춥니다.
+
+**bg_story1 — 새벽 어시장 (스토리 1: 태자가 새벽마다 다녀오는 곳)**
+```
+vertical scene, a Busan fish market at dawn in 1990, wet concrete floor,
+rows of styrofoam fish boxes and red rubber basins with fish and squid, blue
+tarpaulin awnings, bare light bulbs still on, a pale blue and soft pink dawn
+sky over the harbor with fishing boats and cranes, rising mist, quiet and
+calm before the market opens, empty center and lower half for characters,
+no people
+```
+
+**bg_story2 — 가게 앞, 간판 다는 날 (스토리 2·마무리)**
+```
+vertical scene, the front of a small Korean restaurant in a 1990 Busan
+market street in the evening, aluminum-framed sliding glass doors with warm
+light inside, a large empty blank signboard frame above the entrance, a
+wooden ladder leaning against the wall, a striped canvas awning, red round
+plastic stools stacked outside, a huge stainless steel stock pot steaming by
+the door, neighboring stalls with shutters half down, warm orange evening
+sky fading to indigo, empty center and lower half for characters, no people
+```
+메모: 간판에는 글자를 넣지 않습니다. '황가상점' 글자는 필요하면 코드(폰트)로 얹습니다.
+
+**gen_oden — 생선 상자 (등롱 빼고 다시)** ○
+```
+a wooden fish crate overflowing with fresh fish and crushed ice, a soft
+lantern-yellow glow around the crate edge, Busan fish market style, no
+lantern, no paper lantern, game item icon, 3/4 top-down angle, plain white
+background, isolated, centered
+```
+메모: 지금 게임은 생성기 뒤에 코드로 노란 빛을 그리므로, 그림 자체의 빛은 약해도 됩니다.
+
+### 8-4. 3장 전체 표에 추가
+3장 표의 #15~17, #30은 이 장의 프롬프트로 다시 그립니다 (같은 파일 이름으로 덮어쓰기). #34~37은 8-3 표를 보세요.
