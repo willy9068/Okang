@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대사·UI 편집기 — 오캉과 엄마: 아빠의 기억</title>
+<style>
+  :root { --navy: #1F2B4A; --gold: #D9A441; --cream: #F4E6CC; --ink: #2B1D14; --teal: #2F7F86; --bg: #EFE8DA; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif; font-size: 14px; }
+  header { height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 14px;
+    background: var(--navy); color: var(--cream); border-bottom: 3px solid var(--gold); }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  header .grow { flex: 1; }
+  #status { font-size: 13px; opacity: .9; }
+  button { font: inherit; cursor: pointer; border-radius: 8px; border: 1px solid #8a7a60; background: #fff; padding: 5px 10px; }
+  button.primary { background: var(--teal); color: #fff; border-color: var(--gold); font-weight: bold; padding: 7px 16px; }
+  button.small { padding: 2px 7px; font-size: 12px; }
+  button.on { background: var(--gold); color: var(--ink); font-weight: bold; }
+  main { display: flex; height: calc(100% - 52px); }
+  #left { width: 520px; min-width: 380px; display: flex; flex-direction: column; border-right: 2px solid #cdbf9f; }
+  #tabs { display: flex; gap: 4px; padding: 8px 10px 0; }
+  #tabs button { border-radius: 8px 8px 0 0; border-bottom: none; }
+  #panel { flex: 1; overflow: auto; padding: 12px; background: #FBF7EE; border-top: 2px solid #cdbf9f; }
+  #right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 10px; }
+  #frame { width: 405px; height: 720px; border: 3px solid var(--navy); border-radius: 12px; background: #141C33; }
+  .help { font-size: 12px; color: #6b5a40; margin: 0 0 10px; line-height: 1.5; }
+  .row { display: flex; align-items: center; gap: 6px; margin: 6px 0; flex-wrap: wrap; }
+  .row label.k { width: 170px; font-size: 13px; }
+  .row input[type=text] { flex: 1; min-width: 160px; }
+  input, select, textarea { font: inherit; border: 1px solid #b9a984; border-radius: 6px; padding: 4px 6px; background: #fff; }
+  input.num { width: 64px; }
+  textarea { width: 100%; resize: vertical; min-height: 44px; }
+  .item { border: 1px solid #d6c8a8; border-radius: 10px; padding: 8px; margin: 8px 0; background: #fff; }
+  .item.sel { border: 2px solid var(--gold); background: #FFF7E2; }
+  .item h4 { margin: 0 0 4px; font-size: 13px; }
+  .line { border: 1px solid #d6c8a8; border-radius: 10px; padding: 8px; margin: 8px 0; background: #fff; }
+  .line.cur { border: 2px solid var(--teal); }
+  .line.choice { background: #FFF7E2; }
+  .line .head { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; flex-wrap: wrap; }
+  .line .head .n { font-weight: bold; width: 28px; }
+  .opt { border-top: 1px dashed #d6c8a8; padding-top: 6px; margin-top: 6px; }
+  .opt .lab { font-size: 12px; color: #6b5a40; margin: 4px 0 2px; }
+  h3 { margin: 14px 0 6px; font-size: 14px; color: var(--navy); }
+  .count { font-size: 13px; margin: 6px 0 10px; }
+  .warn { color: #b03a2e; }
+  #sceneLabel { font-size: 13px; color: #4a3d2a; }
+</style>
+</head>
+<body>
+<header>
+  <h1>대사·UI 편집기</h1>
+  <button class="primary" id="saveBtn">저장</button>
+  <button id="discardBtn" title="마지막으로 저장한 상태로 다시 불러옵니다">저장 안 한 변경 버리기</button>
+  <span id="status">불러오는 중…</span>
+  <span class="grow"></span>
+  <span style="font-size:12px;opacity:.8">저장하면 src/ui_text.js · src/story_data.js 가 바뀌고, 이전 파일은 tools/editor_backup 에 남습니다</span>
+</header>
+<main>
+  <section id="left">
+    <div id="tabs">
+      <button data-tab="layout" class="on">화면 배치</button>
+      <button data-tab="texts">화면 문장</button>
+      <button data-tab="story">대사</button>
+    </div>
+    <div id="panel"></div>
+  </section>
+  <section id="right">
+    <div id="sceneLabel"></div>
+    <iframe id="frame" src="../src/index.html?edit"></iframe>
+  </section>
+</main>
+
+<script>
+// ---------- 상태 ----------
+var W = null;            // 미리보기 게임 창 (iframe 안의 window). 값은 W.G.DATA / W.G.STORY 에 바로 씀
+var tab = 'layout';
+var dirty = false;
+var view = { scene: 'merge', story: 'intro', line: 0, pick: null, step: null };
+var STORY_NAMES = { intro: '도입 (새 게임 시작)', story1: '스토리 1 (확장 1단계 뒤)', story2: '스토리 2 (확장 2단계 뒤)', ending: '마무리 (스토리 2 바로 뒤)' };
+var WHO = [['narr', '장면 설명'], ['father', '나 (아버지)'], ['mother', '태자'], ['mono', '아버지 속마음']];
+var TEXT_LABELS = {
+  shopStage: '가게 단계 이름 (HUD 오른쪽)', hintMerge: '기본 안내 문구 (맨 아래)', boardFull: '보드가 가득 찼을 때',
+  deleted: '아이템을 치웠을 때', cantDeleteGen: '생성기를 치우려 할 때', loadFail: '저장을 못 불러왔을 때',
+  expandBtn: '확장 버튼 글자', expandDone: '확장 직후 안내 (1번=확장 1단계, 2번=확장 2단계)', tapNext: '대사 다음 표시',
+  endTitle: '끝 화면 제목', endLines: '끝 화면 문장', endTime: '끝 화면 시간 ({time} 지우지 않기)',
+  endRestart: '끝 화면 버튼: 처음부터', endContinue: '끝 화면 버튼: 계속', restartConfirm: '처음부터 확인 문구',
+  noMoney: '돈이 모자랄 때', serveReady: '요리가 다 모였을 때 버튼', served: '주문을 냈을 때 ({name}, {money} 지우지 않기)',
+  notWanted: '필요 없는 요리를 놓았을 때', signText: '마무리 장면 간판 글씨 (bg_ending 그림이 없을 때)'
+};
+
+function el(tag, attrs, kids) {
+  var e = document.createElement(tag);
+  for (var k in (attrs || {})) {
+    if (k === 'text') e.textContent = attrs[k];
+    else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), attrs[k]);
+    else e.setAttribute(k, attrs[k]);
+  }
+  (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+  return e;
+}
+function setDirty(v) {
+  dirty = v;
+  document.getElementById('status').textContent = v ? '● 저장 안 한 변경이 있습니다' : '저장된 상태';
+}
+function D() { return W.G.DATA; }
+function S() { return W.G.STORY; }
+
+// ---------- 미리보기 장면 ----------
+function showView() {
+  if (!W) return;
+  var E = W.G.Edit;
+  if (view.scene === 'story') E.show('story', view.story, view.line, view.pick, view.step);
+  else E.show(view.scene);
+  var label = { merge: '머지 화면', end: '끝 화면' }[view.scene] ||
+    ('스토리: ' + STORY_NAMES[view.story] + ' · ' + (view.line + 1) + '번째 줄' +
+     (view.pick !== null ? ' · ' + (view.pick + 1) + '번 고른 뒤 ' + (view.step === 'mono' ? '속마음' : '태자 반응') : ''));
+  document.getElementById('sceneLabel').textContent = '미리보기: ' + label + '  (미리보기 안에서 상자를 끌면 옮겨지고, 오른쪽 아래 네모를 끌면 크기가 바뀝니다)';
+}
+function preview(scene, story, line, pick, step) {
+  view = { scene: scene, story: story || view.story, line: line || 0, pick: (typeof pick === 'number') ? pick : null, step: step || null };
+  showView();
+}
+
+// 미리보기에서 끌어 옮겼을 때 (edit.js 가 부름)
+window.EditorHooks = {
+  changed: function (id) {
+    if (id) setDirty(true);
+    if (tab === 'layout') renderLayout(id);
+  }
+};
+
+// ---------- 탭: 화면 배치 ----------
+function renderLayout(selId) {
+  var p = document.getElementById('panel');
+  p.innerHTML = '';
+  p.appendChild(el('p', { class: 'help', text: '미리보기 안의 상자를 직접 끌거나, 아래 숫자를 고치세요. 좌표는 540×960 화면 기준입니다 (그림 파일은 2배 크기).' }));
+  var sc = el('div', { class: 'row' }, [
+    sceneBtn('머지 화면', 'merge'),
+    sceneBtn('스토리: 대사', 'story', function () { preview('story', 'ending', 0); }),
+    sceneBtn('스토리: 선택지', 'story', function () { preview('story', 'story1', firstChoice('story1')); }),
+    sceneBtn('끝 화면', 'end')
+  ]);
+  p.appendChild(sc);
+  var E = W.G.Edit;
+  var items = E.items();
+  if (!items.length) p.appendChild(el('p', { class: 'help', text: '이 장면에는 옮길 상자가 없습니다. 끝 화면 문장은 "화면 문장" 탭에서 고칩니다.' }));
+  items.forEach(function (d) {
+    var r = d.get(), on = (selId || E.sel) === d.id;
+    var box = el('div', { class: 'item' + (on ? ' sel' : ''), onclick: function () { E.sel = d.id; renderLayout(d.id); } });
+    box.appendChild(el('h4', { text: d.name }));
+    var row = el('div', { class: 'row' });
+    ['x', 'y', 'w', 'h'].forEach(function (k) {
+      var inp = el('input', { class: 'num', type: 'number', value: Math.round(r[k]) });
+      inp.addEventListener('change', function () {
+        var nr = d.get(); nr[k] = +inp.value;
+        E.setRect(d.id, nr); setDirty(true); renderLayout(d.id);
+      });
+      row.appendChild(el('label', { text: { x: '가로 위치', y: '세로 위치', w: '너비', h: '높이' }[k] }));
+      row.appendChild(inp);
+    });
+    box.appendChild(row);
+    (d.extra || []).forEach(function (k) {
+      var inp = el('input', { class: 'num', type: 'number', value: d.obj[k] });
+      inp.addEventListener('change', function () { d.obj[k] = +inp.value; setDirty(true); renderLayout(d.id); });
+      box.appendChild(el('div', { class: 'row' }, [
+        el('label', { class: 'k', text: { gap: '칸 사이 간격', pad: '글자 좌우 여백', padTop: '글자 위 여백' }[k] || k }), inp]));
+    });
+    p.appendChild(box);
+  });
+}
+function sceneBtn(label, scene, fn) {
+  var on = view.scene === scene && (scene !== 'story' || (label.indexOf('선택지') >= 0) === isChoiceView());
+  return el('button', { class: on ? 'on' : '', text: label, onclick: function () {
+    if (fn) fn(); else preview(scene);
+    renderLayout();
+  } });
+}
+function isChoiceView() {
+  var l = S()[view.story] && S()[view.story].lines[view.line];
+  return !!(l && l.choice) && view.pick === null;
+}
+function firstChoice(id) {
+  var L = S()[id].lines;
+  for (var i = 0; i < L.length; i++) if (L[i].choice) return i;
+  return 0;
+}
+
+// ---------- 탭: 화면 문장 ----------
+function renderTexts() {
+  var p = document.getElementById('panel'), d = D();
+  p.innerHTML = '';
+  p.appendChild(el('p', { class: 'help', text: '고치면 미리보기에 바로 보입니다 (보이는 장면에 있는 문장만). { } 로 감싼 표시는 게임이 숫자·이름으로 바꾸는 자리이니 지우지 마세요.' }));
+
+  p.appendChild(el('h3', { text: '이름표' }));
+  p.appendChild(textRow('나 (아버지)', d.names, 'father'));
+  p.appendChild(textRow('태자 (어머니)', d.names, 'mother'));
+
+  p.appendChild(el('h3', { text: '손님 이름 (그림이 없을 때 동그라미 안에 보임)' }));
+  d.customers.forEach(function (c, i) { p.appendChild(textRow('손님 ' + (i + 1) + ' (cust_' + c.id + ')', c, 'name')); });
+
+  p.appendChild(el('h3', { text: '조작 안내 (처음 한 번씩, 맨 아래 줄)' }));
+  d.tutorial.forEach(function (t, i) { p.appendChild(textRow('안내 ' + (i + 1), d.tutorial, i)); });
+
+  p.appendChild(el('h3', { text: '화면 문장' }));
+  Object.keys(d.texts).forEach(function (k) {
+    var v = d.texts[k], lab = TEXT_LABELS[k] || k;
+    if (Array.isArray(v)) v.forEach(function (_, i) {
+      if (k === 'expandDone' && i === 0) return;
+      p.appendChild(textRow(lab + ' · ' + (i + 1 - (k === 'expandDone' ? 1 : 0) || i + 1), v, i));
+    });
+    else p.appendChild(textRow(lab, d.texts, k));
+  });
+}
+function textRow(label, obj, key) {
+  var inp = el('input', { type: 'text' });
+  inp.value = obj[key];
+  inp.addEventListener('input', function () { obj[key] = inp.value; setDirty(true); });
+  return el('div', { class: 'row' }, [el('label', { class: 'k', text: label }), inp]);
+}
+
+// ---------- 탭: 대사 ----------
+function renderStory() {
+  var p = document.getElementById('panel'), st = S();
+  var id = view.story;
+  p.innerHTML = '';
+  var sel = el('select');
+  Object.keys(st).forEach(function (k) {
+    var o = el('option', { value: k, text: STORY_NAMES[k] || k });
+    if (k === id) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', function () { preview('story', sel.value, 0); renderStory(); });
+  p.appendChild(el('div', { class: 'row' }, [el('label', { text: '장면' }), sel]));
+
+  var L = st[id].lines, nl = 0, nc = 0;
+  L.forEach(function (l) { if (l.choice) nc++; else nl++; });
+  var guide = (id === 'story1' || id === 'story2');
+  var cnt = el('div', { class: 'count' + (guide && (nl !== 15 || nc !== 2) ? ' warn' : ''),
+    text: '대사 ' + nl + '줄 · 선택 ' + nc + '개' + (guide ? '  (개발 가이드 기준: 대사 15줄 · 선택 2개)' : '') });
+  p.appendChild(cnt);
+  p.appendChild(el('p', { class: 'help', text: '줄을 누르면 미리보기에 그 줄이 보입니다. 선택지의 "반응"은 고른 직후 태자의 한 줄, "속마음"은 이어지는 아버지 독백입니다. 고른 뒤 이야기는 무엇을 골라도 같습니다.' }));
+
+  L.forEach(function (l, i) { p.appendChild(l.choice ? choiceCard(id, L, i) : lineCard(id, L, i)); });
+  p.appendChild(el('div', { class: 'row' }, [
+    el('button', { text: '+ 맨 끝에 대사 줄', onclick: function () { L.push({ who: 'narr', text: '새 대사' }); changed(id, L.length - 1); } }),
+    el('button', { text: '+ 맨 끝에 선택지', onclick: function () { L.push(newChoice()); changed(id, L.length - 1); } })
+  ]));
+}
+function newChoice() {
+  return { choice: { prompt: '나는…', options: [1, 2, 3].map(function (n) {
+    return { text: '보기 ' + n, react: '태자 반응 ' + n, mono: '아버지 속마음 ' + n };
+  }) } };
+}
+function changed(id, line) { setDirty(true); preview('story', id, Math.max(0, line)); renderStory(); }
+function tools(id, L, i) {
+  return [
+    el('button', { class: 'small', text: '보기', onclick: function () { preview('story', id, i); renderStory(); } }),
+    el('button', { class: 'small', text: '↑', title: '위로', onclick: function () { if (i > 0) { L.splice(i - 1, 0, L.splice(i, 1)[0]); changed(id, i - 1); } } }),
+    el('button', { class: 'small', text: '↓', title: '아래로', onclick: function () { if (i < L.length - 1) { L.splice(i + 1, 0, L.splice(i, 1)[0]); changed(id, i + 1); } } }),
+    el('button', { class: 'small', text: '+줄', title: '아래에 대사 줄 추가', onclick: function () { L.splice(i + 1, 0, { who: 'narr', text: '새 대사' }); changed(id, i + 1); } }),
+    el('button', { class: 'small', text: '+선택지', title: '아래에 선택지 추가', onclick: function () { L.splice(i + 1, 0, newChoice()); changed(id, i + 1); } }),
+    el('button', { class: 'small', text: '삭제', onclick: function () {
+      if (L.length <= 1) { alert('장면에는 한 줄 이상 있어야 합니다.'); return; }
+      if (confirm((i + 1) + '번째 줄을 지울까요?')) { L.splice(i, 1); changed(id, i - 1); }
+    } })
+  ];
+}
+function lineCard(id, L, i) {
+  var l = L[i], cur = view.story === id && view.line === i && view.pick === null;
+  var who = el('select');
+  WHO.forEach(function (w) { var o = el('option', { value: w[0], text: w[1] }); if (w[0] === l.who) o.selected = true; who.appendChild(o); });
+  who.addEventListener('change', function () { l.who = who.value; setDirty(true); preview('story', id, i); });
+  var ta = el('textarea');
+  ta.value = l.text;
+  ta.addEventListener('input', function () { l.text = ta.value; setDirty(true); });
+  ta.addEventListener('focus', function () { preview('story', id, i); });
+  return el('div', { class: 'line' + (cur ? ' cur' : '') }, [
+    el('div', { class: 'head' }, [el('span', { class: 'n', text: (i + 1) + '' }), who].concat(tools(id, L, i))),
+    ta
+  ]);
+}
+function choiceCard(id, L, i) {
+  var c = L[i].choice, cur = view.story === id && view.line === i;
+  var pr = el('input', { type: 'text' });
+  pr.value = c.prompt;
+  pr.addEventListener('input', function () { c.prompt = pr.value; setDirty(true); });
+  pr.addEventListener('focus', function () { preview('story', id, i); });
+  var box = el('div', { class: 'line choice' + (cur ? ' cur' : '') }, [
+    el('div', { class: 'head' }, [el('span', { class: 'n', text: (i + 1) + '' }), el('b', { text: '선택지' })].concat(tools(id, L, i))),
+    el('div', { class: 'row' }, [el('label', { text: '대화창 문장' }), pr])
+  ]);
+  c.options.forEach(function (o, k) {
+    var t = el('input', { type: 'text' }); t.value = o.text;
+    t.addEventListener('input', function () { o.text = t.value; setDirty(true); });
+    t.addEventListener('focus', function () { preview('story', id, i); });
+    var re = el('textarea'); re.value = o.react;
+    re.addEventListener('input', function () { o.react = re.value; setDirty(true); });
+    re.addEventListener('focus', function () { preview('story', id, i, k, 'react'); });
+    var mo = el('textarea'); mo.value = o.mono;
+    mo.addEventListener('input', function () { o.mono = mo.value; setDirty(true); });
+    mo.addEventListener('focus', function () { preview('story', id, i, k, 'mono'); });
+    box.appendChild(el('div', { class: 'opt' }, [
+      el('div', { class: 'row' }, [el('b', { text: (k + 1) + '번 보기' }), t]),
+      el('div', { class: 'lab', text: '고른 직후 태자 반응' }), re,
+      el('div', { class: 'lab', text: '이어지는 아버지 속마음' }), mo
+    ]));
+  });
+  return box;
+}
+
+// ---------- 공통 ----------
+function render() {
+  document.querySelectorAll('#tabs button').forEach(function (b) { b.className = b.dataset.tab === tab ? 'on' : ''; });
+  if (!W) return;
+  if (tab === 'layout') renderLayout();
+  else if (tab === 'texts') renderTexts();
+  else renderStory();
+}
+document.querySelectorAll('#tabs button').forEach(function (b) {
+  b.addEventListener('click', function () {
+    tab = b.dataset.tab;
+    if (tab === 'story' && view.scene !== 'story') preview('story', view.story, 0);
+    render();
+  });
+});
+
+document.getElementById('saveBtn').addEventListener('click', function () {
+  var d = D();
+  var body = {
+    ui: { layout: d.layout, boardPos: { top: d.board.top, cell: d.board.cell }, storyLayout: d.storyLayout,
+          names: d.names, customers: d.customers, tutorial: d.tutorial, texts: d.texts },
+    story: S()
+  };
+  document.getElementById('status').textContent = '저장 중…';
+  fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res.ok) { setDirty(false); document.getElementById('status').textContent = '저장했습니다 (' + new Date().toLocaleTimeString() + ')'; }
+      else { document.getElementById('status').textContent = '저장 못 함: ' + res.error; alert('저장하지 못했습니다.\n' + res.error); }
+    })
+    .catch(function () {
+      document.getElementById('status').textContent = '저장 못 함: 편집기 서버가 꺼져 있습니다';
+      alert('편집기 서버에 연결하지 못했습니다. "편집기_켜기.bat"로 다시 켜 주세요.');
+    });
+});
+document.getElementById('discardBtn').addEventListener('click', function () {
+  if (dirty && !confirm('저장하지 않은 변경을 모두 버릴까요?')) return;
+  W = null; setDirty(false);
+  document.getElementById('frame').contentWindow.location.reload();
+});
+window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+document.getElementById('frame').addEventListener('load', function () {
+  var w = document.getElementById('frame').contentWindow;
+  // 게임이 시작될 때까지 기다림
+  (function wait() {
+    if (w.G && w.G.Edit && w.G.state) { W = w; setDirty(false); showView(); render(); }
+    else setTimeout(wait, 100);
+  })();
+});
+if (location.protocol === 'file:') {
+  document.getElementById('status').textContent = '파일로 열면 저장이 안 됩니다. "편집기_켜기.bat"로 여세요.';
+}
+</script>
+</body>
+</html>

@@ -1,30 +1,21 @@
-// 오캉과 엄마: 아빠의 기억 — 모든 수치와 문장은 이 파일 한 곳에 둡니다.
+// 오캉과 엄마: 아빠의 기억 — 게임 수치는 이 파일 한 곳에 둡니다.
+// 화면 배치(위치·크기)·화면 문장·이름표·손님 이름은 ui_text.js, 대사는 story_data.js 에 있습니다.
+// 두 파일은 편집기(편집기_켜기.bat)로 고칠 수 있습니다.
 // "임시"라고 적힌 값은 아직 정하지 않은 값입니다 (DEVLOG.md 참고).
 var G = G || {};
 
 G.DATA = {
-  saveKey: 'abba_memory_v4',   // 저장 형식이 바뀌면 숫자를 올립니다 (v4: 닫힌 칸·생성기 자리)
+  saveKey: 'abba_memory_v5',   // 저장 형식이 바뀌면 숫자를 올립니다 (v5: 대사·상징 수정)
   seed: 20261028,              // 시드 난수 (같은 시드 = 같은 결과)
 
   // 화면: 세로 9:16. 코드는 540×960 좌표로 그리고 이미지는 2배(1080×1920)로 만듭니다.
   view: { w: 540, h: 960 },
 
-  // 화면 구역 (540×960 좌표)
-  layout: {
-    hudH: 56,                     // 상단 HUD
-    shop: { y: 0, h: 330 },       // 가게 그림 (HUD 뒤까지 깔림)
-    panel: { y: 330, h: 600 },    // 나무 카운터 보드 판
-    hint: { y: 930, h: 30 },      // 맨 아래 안내 문구 줄
-    expandBtn: { x: 160, y: 62, w: 220, h: 38 },   // 확장 버튼
-    orders: { y: 108, w: 160, h: 214, gap: 15 }     // 주문 칸 3개 (가로로 나란히)
-  },
-
   // 머지 보드 (임시: 7칸×9칸, 직접 해 보고 조정)
   board: {
     cols: 7,
     rows: 9,
-    cell: 64,            // 칸 하나 크기
-    top: 342,            // 보드 위쪽 y
+    // 칸 크기(cell)와 보드 위치(top)는 ui_text.js의 boardPos (편집기로 고침)
     itemScale: 0.86,     // 칸 안에서 아이템 크기 비율
     // 확장 단계별 열린 칸 (c0~c1열, r0~r1행, 0부터 셈). 2026-10-28 사용자 결정
     openByStage: [
@@ -75,19 +66,8 @@ G.DATA = {
     dragStartPx: 6       // 이만큼 움직여야 드래그로 봄 (그 전엔 탭)
   },
 
-  // 대화창 이름표 (스토리는 3일차)
-  names: { mother: '태자', father: '나' },
-
   // 시작 돈
   startMoney: 0,
-
-  // 손님 (이미지: cust_1 ~ cust_4)
-  customers: [
-    { id: 1, name: '부두 일꾼',     color: '#8C6B4F' },
-    { id: 2, name: '상인 아주머니', color: '#C46A8A' },
-    { id: 3, name: '학생',         color: '#4D5B7A' },
-    { id: 4, name: '할아버지',      color: '#7E8C5A' }
-  ],
 
   // 손님 주문 (임시)
   orders: {
@@ -115,24 +95,13 @@ G.DATA = {
     delayMs: 900,                       // 확장 연출이 끝나고 대화창이 뜨기까지
     charsPerSec: 32,                    // 한 글자씩 나오는 속도
     fadeMs: 250,                        // 대화창 나타나는 시간
-    // 스토리별 배경 그림. 파일이 없으면 bg_memory(밤 시장 골목)
-    bg: { intro: 'bg_memory', story1: 'bg_story1', story2: 'bg_story2', ending: 'bg_story2' }
+    // 스토리별 배경 그림. 앞에서부터 있는 파일을 씀, 다 없으면 bg_memory(밤 시장 골목)
+    bg: { intro: ['bg_memory'], story1: ['bg_story1'], story2: ['bg_story2'], ending: ['bg_ending', 'bg_story2'] },
+    // 마무리 장면 간판 글씨: bg_ending 그림이 없을 때 bg_story2의 빈 간판 위에 코드로 씀
+    // (자리·크기·글자는 ui_text.js의 storyLayout.sign, texts.signText)
+    signScene: 'ending',
+    signNeedsMissing: 'bg_ending'
   },
-
-  // 스토리 화면 배치 (540×960 좌표)
-  storyLayout: {
-    father: { x: 6, y: 330, w: 280, h: 400 },     // 나 (왼쪽)
-    mother: { x: 254, y: 330, w: 280, h: 400 },   // 태자 (오른쪽)
-    box: { x: 16, y: 700, w: 508, h: 200, pad: 74, padTop: 56 },   // 대화창 (pad: 글자 안쪽 여백, ui_dialog 장식 피함)
-    choice: { x: 40, y: 430, w: 460, h: 66, gap: 14 }   // 선택지 버튼 3개
-  },
-
-  // 조작 안내 (처음 한 번씩, 순서대로)
-  tutorial: [
-    '생선 상자나 가마솥(생성기)을 눌러 재료를 만들어요.',
-    '같은 재료 같은 단계 2개를 끌어서 겹쳐 보세요.',
-    '손님이 원하는 요리를 주문 칸에 끌어 놓거나, 다 모이면 주문 칸을 눌러요.'
-  ],
 
   // 밸런스 계산용 (tools/balance.js만 씀): 사람이 한 동작에 쓰는 시간(초)
   balanceSim: {
@@ -162,29 +131,6 @@ G.DATA = {
     shop: ['#7A6A58', '#B58A5A', '#D9A86A']   // 가게 0/1/2단계 placeholder
   },
 
-  // 화면 문장 (작성자가 직접 고칠 수 있게 여기 둡니다)
-  texts: {
-    shopStage: ['작은 가게', '확장 1단계', '확장 2단계'],
-    hintMerge: '같은 재료 같은 단계끼리 겹치면 다음 단계가 돼요.',
-    boardFull: '보드가 가득 찼어요! 아이템을 길게 눌러 치울 수 있어요.',
-    deleted: '치웠어요.',
-    cantDeleteGen: '생성기는 치울 수 없어요.',
-    loadFail: '저장된 진행을 불러오지 못해 새로 시작해요.',
-    expandBtn: '가게 확장',
-    expandDone: ['', '가게가 한 칸 넓어졌어요!', '가게가 북적이기 시작했어요!'],
-    tapNext: '▼',
-    endTitle: '오캉과 엄마: 아빠의 기억',
-    endLines: ['이야기는 본편으로 이어집니다.', '(데모 · 임시 대사)'],
-    endTime: '머지 시간 {time}',
-    endRestart: '처음부터',
-    endContinue: '가게 계속 하기',
-    restartConfirm: '처음부터 다시 할까요? 지금 진행은 지워져요.',
-    noMoney: '돈이 모자라요.',
-    serveReady: '내기',
-    served: '{name} 손님 +{money}',
-    notWanted: '이 주문에는 필요 없는 요리예요.'
-  },
-
   // 이미지 파일 이름 (assets/<이름>.png). 없으면 색 블록으로 그립니다.
   // 이름 규칙은 README.md "이미지 넣기" 참고.
   images: [
@@ -194,9 +140,23 @@ G.DATA = {
     'ui_cell', 'ui_board', 'ui_hud', 'ui_coin', 'fx_merge',
     'shop_0', 'shop_1', 'shop_2',
     'cust_1', 'cust_2', 'cust_3', 'cust_4',
-    'ui_order', 'ui_button', 'ui_expand',
+    'ui_order', 'ui_button', 'ui_expand',   // ui_order(말풍선)는 2026-10-29 접시 방식으로 바뀌어 안 씀
     'char_father', 'char_mother', 'char_father_smile', 'char_mother_smile',
     'ui_dialog', 'bg_memory',
-    'ui_lock', 'bg_story1', 'bg_story2'   // 2차 요청 (없으면 코드 그림 / bg_memory)
+    'ui_lock', 'bg_story1', 'bg_story2',   // 2차 요청 (없으면 코드 그림 / bg_memory)
+    'bg_ending', 'ui_plate'                // 3차 요청 (없으면 bg_story2 + 코드 간판 글씨 / 코드 접시)
   ]
+};
+
+// ui_text.js(편집기가 쓰는 파일)의 값을 G.DATA에 넣음
+G.applyUiText = function (U) {
+  var D = G.DATA;
+  D.layout = U.layout;
+  D.storyLayout = U.storyLayout;
+  D.board.top = U.boardPos.top;
+  D.board.cell = U.boardPos.cell;
+  D.texts = U.texts;
+  D.tutorial = U.tutorial;
+  D.names = U.names;
+  D.customers = U.customers;
 };

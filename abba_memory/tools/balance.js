@@ -7,7 +7,7 @@ var vm = require('vm');
 
 var ctx = { Math: Math, JSON: JSON };
 vm.createContext(ctx);
-['data.js', 'rng.js', 'board.js', 'order.js', 'expand.js'].forEach(function (f) {
+['data.js', 'ui_text.js', 'rng.js', 'board.js', 'order.js', 'expand.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board, S = D.balanceSim;

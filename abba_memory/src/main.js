@@ -299,7 +299,7 @@ G.toView = function (e) {
 };
 
 G.onDown = function (e) {
-  if (G.input) return;
+  if (G.input || G.Edit.on) return;   // 편집 모드에서는 게임 조작 대신 edit.js가 받음
   var p = G.toView(e);
   if (!G.Scene.is('merge')) {
     G.canvas.setPointerCapture(e.pointerId);
@@ -423,8 +423,14 @@ G.start = function () {
   G.canvas = document.getElementById('game');
   G.ctx = G.canvas.getContext('2d');
   G.UI.loadImages();
-  var saved = G.load();
-  if (saved) {
+  var saved = G.Edit.on ? null : G.load();
+  if (G.Edit.on) {
+    // 편집 모드: 저장하지 않고, 보기 좋은 보드로 머지 화면부터
+    G.save = function () {};
+    G.newGame();
+    G.state.storyQueue = [];
+    G.Edit.seed();
+  } else if (saved) {
     G.rng = G.makeRng(G.DATA.seed);
     if (typeof saved.rng === 'number') G.rng.setState(saved.rng);
     G.state = saved;
@@ -435,7 +441,8 @@ G.start = function () {
     G.newGame();
     G.save();
   }
-  G.playNextStory();   // 도입, 또는 보다 만 스토리부터 다시
+  if (G.Edit.on) G.Edit.init();
+  else G.playNextStory();   // 도입, 또는 보다 만 스토리부터 다시
   G.resize();
   window.addEventListener('resize', G.resize);
   G.canvas.addEventListener('pointerdown', G.onDown);

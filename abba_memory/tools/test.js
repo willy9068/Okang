@@ -5,7 +5,7 @@ var vm = require('vm');
 
 var ctx = { Math: Math, JSON: JSON };
 vm.createContext(ctx);
-['data.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js', 'story.js'].forEach(function (f) {
+['data.js', 'ui_text.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js', 'story.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board;
@@ -320,7 +320,10 @@ function makeState() {
   // 확장 단계별로 볼 스토리가 data.js에 맞게 있음
   var okIds = true;
   D.story.afterExpand.forEach(function (ids) { (ids || []).forEach(function (id) { if (!G.STORY[id]) okIds = false; }); });
-  var bgOk = Object.keys(G.STORY).every(function (id) { return D.images.indexOf(D.story.bg[id]) >= 0; });
+  var bgOk = Object.keys(G.STORY).every(function (id) {
+    var list = D.story.bg[id];
+    return list && list.length && list.every(function (n) { return D.images.indexOf(n) >= 0; });
+  });
   check('스토리마다 배경 그림 이름이 있고 이미지 목록에 들어 있음', bgOk);
   check('확장 뒤 스토리 id가 모두 있음', okIds && !!G.STORY[D.story.intro] && D.story.afterExpand.length === D.expand.costs.length + 1);
 })();

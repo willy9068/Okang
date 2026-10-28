@@ -56,6 +56,7 @@ G.UI = {
     } else if (G.Scene.is('end')) {
       G.UI.drawEnd(ctx, D, C);
     }
+    if (G.Edit.on) G.Edit.draw(ctx);
   },
 
   drawShop: function (ctx, D, C) {
@@ -133,39 +134,44 @@ G.UI = {
       ctx.scale(k, k);
       ctx.translate(-r.w / 2, -r.h / 2);
 
-      // 손님 얼굴
+      // 손님 얼굴 (칸 위쪽 절반)
       var cust = D.customers.filter(function (c) { return c.id === o.cust; })[0] || D.customers[0];
+      var fs = Math.min(r.w * 0.62, r.h * 0.5);       // 얼굴 크기
       var cim = G.UI.img('cust_' + cust.id);
-      if (cim) ctx.drawImage(cim, r.w / 2 - 36, 0, 72, 72);
+      if (cim) ctx.drawImage(cim, r.w / 2 - fs / 2, 0, fs, fs);
       else {
-        ctx.beginPath(); ctx.arc(r.w / 2, 34, 28, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(r.w / 2, fs / 2, fs * 0.38, 0, Math.PI * 2);
         ctx.fillStyle = cust.color; ctx.fill();
         ctx.lineWidth = 3; ctx.strokeStyle = C.outline; ctx.stroke();
         ctx.fillStyle = C.cream; ctx.font = 'bold 11px sans-serif';
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(cust.name, r.w / 2, 34);
+        ctx.fillText(cust.name, r.w / 2, fs / 2);
       }
 
-      // 말풍선
-      var by = 74, bh = r.h - by;
-      var bim = G.UI.img('ui_order');
-      if (bim) ctx.drawImage(bim, 0, by, r.w, bh);
+      // 손님 바로 밑 접시 (가십하버식). 접시 위에 요리
+      var pw = r.w * 0.94, ph = r.h * 0.32, py = r.h * 0.6;   // 접시 크기·가운데 높이
+      var pim = G.UI.img('ui_plate');
+      if (pim) ctx.drawImage(pim, r.w / 2 - pw / 2, py - ph / 2, pw, ph);
       else {
-        G.UI.roundRect(ctx, 0, by, r.w, bh, 14);
-        ctx.fillStyle = C.cream; ctx.fill();
+        ctx.beginPath(); ctx.ellipse(r.w / 2, py + 3, pw / 2, ph / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fill();               // 그림자
+        ctx.beginPath(); ctx.ellipse(r.w / 2, py, pw / 2, ph / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = '#FBF8F2'; ctx.fill();
         ctx.lineWidth = 3; ctx.strokeStyle = C.outline; ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(r.w / 2, py, pw / 2 - 7, ph / 2 - 5, 0, 0, Math.PI * 2);
+        ctx.lineWidth = 2; ctx.strokeStyle = '#7FA6C9'; ctx.stroke();  // 파란 테두리
       }
       if (accept || ready) {
-        G.UI.roundRect(ctx, 3, by + 3, r.w - 6, bh - 6, 12);
+        ctx.beginPath(); ctx.ellipse(r.w / 2, py, pw / 2 + 3, ph / 2 + 3, 0, 0, Math.PI * 2);
         ctx.lineWidth = hoverOrder === oi ? 5 : 3;
         ctx.strokeStyle = C.mergeGlow; ctx.stroke();
       }
 
       // 필요한 요리 (이미 낸 것은 흐리게, 보드에 있는 것은 초록 체크)
-      var n = o.needs.length, size = n === 1 ? 64 : 54;
+      var n = o.needs.length, size = Math.min(ph * (n === 1 ? 1.15 : 1.0), r.w * (n === 1 ? 0.45 : 0.36));
       o.needs.forEach(function (need, k2) {
-        var cx = n === 1 ? r.w / 2 : r.w / 2 + (k2 === 0 ? -36 : 36);
-        var cy = by + 40;
+        var cx = n === 1 ? r.w / 2 : r.w / 2 + (k2 === 0 ? -1 : 1) * pw * 0.22;
+        var cy = py - ph * 0.12;
         ctx.save();
         if (need.done) ctx.globalAlpha = 0.35;
         G.UI.drawCell(ctx, D, C, { kind: 'item', chain: need.chain, lv: need.lv }, cx, cy, size);
@@ -173,17 +179,26 @@ G.UI = {
         if (have[k2] && !need.done) G.UI.drawCheck(ctx, cx + size / 2 - 6, cy - size / 2 + 6);
       });
 
-      // 보상 또는 내기
+      // 보상 또는 내기 (접시 아래)
+      var ry = r.h * 0.9;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       if (ready) {
-        G.UI.roundRect(ctx, r.w / 2 - 44, by + 75, 88, 26, 10);
+        G.UI.roundRect(ctx, r.w / 2 - 46, ry - 13, 92, 26, 10);
         ctx.fillStyle = C.teal; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
         ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 14px sans-serif';
-        ctx.fillText(D.texts.serveReady + ' +' + o.reward, r.w / 2, by + 88);
+        ctx.fillText(D.texts.serveReady + ' +' + o.reward, r.w / 2, ry);
       } else {
-        ctx.fillStyle = C.outline; ctx.font = 'bold 15px sans-serif';
-        ctx.fillText('+' + o.reward, r.w / 2, by + 88);
+        G.UI.roundRect(ctx, r.w / 2 - 36, ry - 12, 72, 24, 10);
+        ctx.fillStyle = 'rgba(31,43,74,0.85)'; ctx.fill();
+        var coin = G.UI.img('ui_coin');
+        if (coin) ctx.drawImage(coin, r.w / 2 - 32, ry - 9, 18, 18);
+        else {
+          ctx.beginPath(); ctx.arc(r.w / 2 - 23, ry, 8, 0, Math.PI * 2);
+          ctx.fillStyle = C.gold; ctx.fill();
+        }
+        ctx.fillStyle = C.cream; ctx.font = 'bold 14px sans-serif';
+        ctx.fillText('+' + o.reward, r.w / 2 + 8, ry);
       }
       ctx.restore();
     });
@@ -486,9 +501,11 @@ G.UI = {
   // ---------- 스토리 (대화창 오버레이) ----------
 
   // 기억 장면 배경: 밤 + 등불 (bg_memory 이미지가 있으면 그것)
-  // name: 쓸 배경 그림 이름 (없으면 bg_memory, 그것도 없으면 코드로 그린 밤)
-  drawNight: function (ctx, D, C, name) {
-    var im = (name && G.UI.img(name)) || G.UI.img('bg_memory');
+  // names: 쓸 배경 그림 이름 목록 (앞에서부터 있는 것, 다 없으면 bg_memory, 그것도 없으면 코드로 그린 밤)
+  drawNight: function (ctx, D, C, names) {
+    var im = null;
+    (names || []).forEach(function (n) { if (!im) im = G.UI.img(n); });
+    im = im || G.UI.img('bg_memory');
     if (im) { ctx.drawImage(im, 0, 0, D.view.w, D.view.h); return; }
     var g = ctx.createLinearGradient(0, 0, 0, D.view.h);
     g.addColorStop(0, C.night); g.addColorStop(1, C.nightDeep);
@@ -576,6 +593,21 @@ G.UI = {
     ctx.restore();
   },
 
+  // 마무리 장면: 글씨 있는 간판 그림(bg_ending)이 없으면 빈 간판 위에 코드로 '황가상점'
+  drawSign: function (ctx, D, C, id) {
+    if (id !== D.story.signScene || G.UI.img(D.story.signNeedsMissing)) return;
+    var r = D.storyLayout.sign, t = D.texts.signText;
+    ctx.save();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var fsz = r.h * 0.55;
+    ctx.font = 'bold ' + fsz + 'px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+    var tw = ctx.measureText(t).width;
+    if (tw > r.w * 0.86) { fsz *= r.w * 0.86 / tw; ctx.font = 'bold ' + fsz + 'px "Malgun Gothic", "Apple SD Gothic Neo", sans-serif'; }
+    ctx.fillStyle = C.navy;
+    ctx.fillText(t, r.x + r.w / 2, r.y + r.h / 2 + 2);
+    ctx.restore();
+  },
+
   choiceRect: function (k) {
     var L = G.DATA.storyLayout.choice;
     return { x: L.x, y: L.y + k * (L.h + L.gap), w: L.w, h: L.h };
@@ -591,6 +623,7 @@ G.UI = {
     if (c.kind === 'end') return;
     var who = c.kind === 'line' ? c.who : 'father';   // 고르는 동안은 '나'가 밝게
     G.UI.drawNight(ctx, D, C, D.story.bg[run.id]);
+    G.UI.drawSign(ctx, D, C, run.id);
     G.UI.drawPortrait(ctx, D, C, 'father', who === 'father');
     G.UI.drawPortrait(ctx, D, C, 'mother', who === 'mother');
 

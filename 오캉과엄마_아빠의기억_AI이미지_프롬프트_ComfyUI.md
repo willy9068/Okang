@@ -1,6 +1,6 @@
 # 오캉과 엄마: 아빠의 기억 — 아트 스타일 · 이미지 목록 · AI 이미지 프롬프트 (ComfyUI용)
 
-> 2026-10-28 (2차 요청: 8장) · 양식은 `스톱앤스케치_AI이미지_프롬프트_ComfyUI.md`를 따랐습니다. 프롬프트는 영어로 썼습니다(대부분의 모델이 영어에서 안정적).
+> 2026-10-28 (2차 요청: 8장 · 3차 요청 2026-10-29: 9장) · 양식은 `스톱앤스케치_AI이미지_프롬프트_ComfyUI.md`를 따랐습니다. 프롬프트는 영어로 썼습니다(대부분의 모델이 영어에서 안정적).
 > 아트 기준 이미지: `따뜻한 한식당 요리 게임 화면-3.png`(기본 톤), `전통 시장 경매 게임 UI-2.png`·`등불이 빛나는 유령 던전 퍼즐 UI-1.png`(UI 틀, 밤 장면).
 > 저는 이미지를 직접 만들 수 없고 ComfyUI도 실행해 보지 못했습니다. **결과가 어떻게 나오는지는 확인하지 못했으니** 첫날 3장 시험(0-1)으로 먼저 확인하세요.
 > 게임 안 파일 이름은 3장 표와 `abba_memory/README.md`의 이름 규칙이 같습니다. 파일이 없으면 게임은 색 블록으로 돌아갑니다.
@@ -92,7 +92,7 @@ modern car, neon, glossy plastic, horror, dark gloomy
 
 ---
 
-## 3. 이미지 목록과 파일 규격 (1차 33장, 최소 구성 19장 · 2차 추가는 8-3)
+## 3. 이미지 목록과 파일 규격 (1차 33장, 최소 구성 19장 · 2차 추가는 8-3 · 3차는 9장)
 
 우선순위: ★=1~2일차에 필요(보드·가게) / ☆=3~5일차(스토리·UI) / ○=여유 있을 때
 최소 구성 = ★ 전부 + 인물 2장 + 대화창.
@@ -407,6 +407,8 @@ no people
 - 고를 때 확인: 종이 등롱, 기와 처마, 세로 깃발이 없는가.
 
 ### 8-2. 가게 3단계 `shop_0~2` 다시 그리기 ★ (같은 이름으로 덮어쓰기)
+> **2026-10-29: 이 순서(부분 인페인트)로 만든 그림이 오려 붙인 것처럼 보여서, 9-3의 '그림 전체를 다시 그리는' 순서로 바꿉니다.** 아래는 2차 기록용입니다.
+
 
 #### 확장되는 느낌을 만드는 방법
 보드가 **처음 5×6 → 확장 1단계 양옆 열림(7×6) → 확장 2단계 아래까지 전부(7×9)** 로 넓어지는 것과 맞춰, 가게도 **가운데 작은 가게 → 양옆 이웃 칸까지 넓힘 → 안쪽 벽을 터서 뒤쪽 방까지** 로 넓어지게 합니다.
@@ -529,3 +531,117 @@ background, isolated, centered
 
 ### 8-4. 3장 전체 표에 추가
 3장 표의 #15~17, #30은 이 장의 프롬프트로 다시 그립니다 (같은 파일 이름으로 덮어쓰기). #34~37은 8-3 표를 보세요.
+
+---
+
+## 9. 3차 이미지 요청 (2026-10-29, 2차 이미지를 게임에 넣어 본 뒤)
+
+> 근거: 사용자 요청 (2026-10-29)
+> 1. 마무리 장면 간판에 **'황가상점'** 글씨 — 먼저 이미지 생성으로 시도, 잘 안 나오면 코드로 씀 (코드 대신 쓰기는 이미 준비됨, 9-1)
+> 2. 가십하버처럼 **손님 바로 밑에 접시**, 그 위에 음식 → 접시 이미지 (게임 화면은 이미 접시 방식으로 바뀜, 9-2)
+> 3. `shop_0`·`shop_1`이 `shop_2`의 가운데만 오려 붙인 것처럼 보임 → **각각 자연스러운 한 장**으로 다시 (9-3)
+
+| # | 구분 | 파일명 | 크기(px) | 배경 | 우선 | 코드 |
+|---|---|---|---|---|---|---|
+| 38 | 마무리 배경: '황가상점' 간판이 걸린 가게 앞 | bg_ending.png | 1080×1920 | 있음 | ☆ | 연결됨 (없으면 `bg_story2` 빈 간판에 코드로 글씨) |
+| 39 | 주문 접시 | ui_plate.png | 256×128 | 투명 | ★ | 연결됨 (없으면 코드로 그린 흰 접시) |
+| 15~17 | 가게 3단계 다시 | shop_0 ~ shop_2.png | 1080×660 | 있음 | ★ | 덮어쓰기만 |
+
+### 9-1. 마무리 배경 `bg_ending` — 간판에 '황가상점' ☆
+
+**AI가 한글을 쓰게 하는 요령 (확인 못 한 부분은 표시)**
+- 대부분의 그림 모델(SD 1.5·SDXL 계열)은 **한글을 거의 못 씁니다.** 글자를 비교적 잘 쓰는 모델(예: FLUX 계열)을 쓰면 가능성이 있지만, **한글 네 글자가 정확히 나올지는 확인하지 못했습니다.** 모델마다 라이선스도 다르니(예: FLUX.1 [dev]는 비상업 라이선스로 알려져 있음) **모델 페이지에서 직접 확인**하세요.
+- 글자는 프롬프트에서 **큰따옴표로 감싸고**, 간판 위치·모양을 구체적으로 적습니다. 4장 이상 뽑아 글자가 맞는 것만 고릅니다.
+- 그림 전체를 다시 뽑기보다 **`bg_story2`를 바탕으로 간판 부분만 인페인트**하는 것이 같은 가게로 보이기 쉽습니다. 이때는 9-3처럼 경계가 티 나지 않게 마스크 가장자리를 부드럽게(feather) 합니다.
+- 글자가 틀리면 그 그림은 쓰지 않습니다. **`bg_ending.png`가 없으면 게임은 `bg_story2`의 빈 간판 위에 코드(폰트)로 '황가상점'을 씁니다** (`data.js`의 `story.sign`).
+
+```
+vertical scene, the front of a small Korean restaurant in a 1990 Busan market
+street at dusk, a large white rectangular signboard above the entrance with
+bold dark navy Korean hangul letters "황가상점" written in the center, the
+sign lit warmly, aluminum-framed sliding glass doors with warm light inside,
+a striped canvas awning, red round plastic stools stacked outside, a huge
+stainless steel stock pot steaming by the door, two pairs of rubber boots
+standing side by side next to the door, neighboring stalls with shutters half
+down, warm orange evening sky fading to indigo, empty center and lower half
+for characters, no people
+```
+네거티브에 8-0의 일본풍 네거티브 + `chinese characters, kanji, katakana, gibberish text, misspelled text, extra letters` 추가.
+메모
+- **장화 두 켤레**는 이야기의 상징(아버지의 장화, 태자의 장화)입니다 (2026-10-29 켄터키 루트 제로 참고 반영). 작게 보여도 괜찮습니다.
+- 가짜 글자가 다른 간판에 생기기 쉬우니 **간판은 하나만** 보이게 고릅니다 (2차 `bg_story2`의 좌우 가짜 글자 문제).
+
+### 9-2. 주문 접시 `ui_plate` ★
+
+화면에서 손님 얼굴 바로 아래에 접시가 놓이고, 그 위에 요리 아이콘(1~2개)을 코드가 얹습니다. 첨부한 가십하버 화면처럼 **손님 앞 카운터에 놓인 접시**로 보이면 됩니다.
+```
+an empty wide oval white ceramic serving plate with a thin blue rim, seen
+from a 3/4 top-down angle, simple and clean, soft shadow under the plate,
+Korean 1990 diner tableware, thick dark brown outline, game UI asset,
+plain white background, isolated, centered
+```
+메모
+- 가로로 긴 타원(가로:세로 약 2:1). 요리가 2개 올라가는 주문도 있으니 **가운데가 넓고 비어 있어야** 합니다.
+- 접시 위에 음식·무늬를 넣지 않습니다. 파란 테두리는 1990년 식당 그릇 느낌이고, 빼도 됩니다.
+- 크기 256×128로 잘라 배경을 지웁니다.
+
+### 9-3. 가게 3단계 `shop_0~2` 다시 — 자연스러운 한 장씩 ★
+
+**왜 오려 붙인 것처럼 보였나**
+- 2차 때 제가 권한 순서(8-2)는 `shop_2`의 **일부만 마스크로 다시 그리는 인페인트**였습니다. 마스크 경계가 딱딱하면 바뀐 부분과 안 바뀐 부분의 빛·선·흐림이 달라 **경계에 띠**가 생기고, 바뀐 부분만 떠 보입니다. 게임에서는 많이 가려지지만, 그림 자체로는 어색합니다.
+
+**이번 순서 (부분이 아니라 그림 전체를 다시 그림)**
+1. **`shop_0`을 먼저, 처음부터(txt2img) 한 장으로** 뽑습니다. 아래 `shop_0` 프롬프트 전체를 씁니다.
+2. 고른 `shop_0`을 바탕으로 **그림 전체를 img2img**(마스크 없이)로 다시 그리며 `shop_1` 프롬프트를 씁니다. 다시 그리는 세기(denoise)는 **0.55~0.7에서 시작**해 봅니다 **[직접 확인 필요]**. 낮으면 거의 안 바뀌고, 높으면 구도까지 바뀝니다.
+3. 고른 `shop_1`을 바탕으로 같은 방법으로 `shop_2`를 만듭니다.
+4. 그림 전체를 한 번에 다시 그리므로 **경계 띠가 생기지 않고**, 바탕 그림 덕분에 카운터·바닥·천장 위치는 비슷하게 유지됩니다.
+- 위치가 너무 많이 흔들리면: 바탕 그림의 **선(lineart/canny)이나 깊이(depth)를 ControlNet으로 약하게(0.3~0.5)** 걸어 구도만 잡아 주는 방법이 있습니다. 쓸 수 있는 노드·모델은 설치 환경마다 다르니 **직접 확인**하세요.
+- 어느 방법이든 **4장 이상** 뽑고, 세 장을 나란히 놓고 "같은 가게가 넓어지는가"로 고릅니다.
+
+**세 프롬프트는 각각 혼자서도 완성된 장면**입니다 (앞 그림을 가리키는 'same restaurant' 같은 말을 쓰지 않음). 앞에 2장 스타일 블록, 네거티브에 8-0 일본풍 네거티브 + `collage, patchwork, visible seams, mismatched lighting, blurry patches, split image` 추가.
+
+**shop_0 — 처음: 시장 골목 사이에 낀 작은 한 칸 가게**
+```
+front view of the inside of a tiny one-room Korean restaurant in a 1990 Busan
+traditional market, seen from behind the customer counter, a long worn wooden
+counter with a stainless steel top edge across the bottom third of the image,
+a narrow space behind the counter, on both side walls the corrugated metal
+shutters of the neighboring closed stalls, a plain back wall of small square
+white and mint-green tiles with one small window, one huge steaming stainless
+steel stock pot on a gas burner, two red round plastic stools, a single bare
+light bulb and one fluorescent tube light on a low ceiling, a small blank
+wooden menu board, modest but clean, a fresh new start, one consistent light
+source, no people, wide horizontal composition
+```
+
+**shop_1 — 확장 1단계: 양옆 이웃 칸까지 넓어진 가게**
+```
+front view of the inside of a small Korean restaurant in a 1990 Busan
+traditional market, seen from behind the customer counter, a long worn wooden
+counter with a stainless steel top edge across the bottom third of the image,
+the room now wider on both sides with the neighboring stall walls removed,
+two round stainless steel tables with red round plastic stools on the left
+and right, a plain back wall of small square white and mint-green tiles with
+one small window, a huge steaming stainless steel stock pot on a gas burner,
+blank wooden menu boards on the wall, a wall-mounted electric fan, a row of
+fluorescent tube lights on the ceiling, clean and cheerful, one consistent
+light source, no people, wide horizontal composition
+```
+
+**shop_2 — 확장 2단계: 안쪽 방과 큰 창까지 넓어진 가게**
+```
+front view of the inside of a lively Korean restaurant in a 1990 Busan
+traditional market, seen from behind the customer counter, a long worn wooden
+counter with a stainless steel top edge across the bottom third of the image,
+a wide room with the back wall opened into a second dining room, several round
+stainless steel tables with red round plastic stools, a big window at the back
+showing the Busan harbor with fishing boats and cranes, a huge steaming
+stainless steel stock pot on a gas burner, blank wooden menu boards, a wall
+calendar, a small CRT television on a wall bracket, a wall-mounted electric
+fan, a large empty blank signboard frame above the back room, rows of
+fluorescent tube lights, warm and bright, inviting, one consistent light
+source, no people, wide horizontal composition
+```
+메모
+- **게임 화면에서 보이는 곳**: 위쪽 112px는 HUD, 그 아래 가운데에 손님 3명과 접시(2026-10-29부터 말풍선 대신 접시)가 가로로 놓입니다. 손님 머리 뒤(가운데 높이)에 큰 물건이 몰리지 않게 고릅니다.
+- 고를 때 확인: 경계 띠·흐린 사각형이 없는가, 빛 방향이 한 장 안에서 같은가, 세 장의 카운터 높이가 비슷한가.
