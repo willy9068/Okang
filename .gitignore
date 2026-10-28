@@ -1,0 +1,7 @@
+# 외부에 올리지 않는 자료 (사용자 결정 2026-10-28: 코드 + 기획 md만)
+*.pdf
+*.pptx
+예전 자료/
+/*.png
+.claude/
+assets/original/
