@@ -29,6 +29,8 @@ G.Debug = {
       '<select id="dbgLv">' + lvOpts + '</select>' +
       '<button data-a="make">아이템 생성</button></div>' +
       '<button data-a="fill">보드 가득 채우기</button>' +
+      '<button data-a="orders">주문 새로 뽑기</button>' +
+      '<button data-a="info">진행 정보 (걸린 시간·주문 수)</button>' +
       '<button data-a="story" disabled>스토리 장면 보기 (3일차)</button>' +
       '<label><input type="checkbox" id="dbgFps"> FPS 표시</label>' +
       '<button data-a="wipe">저장 지우고 새로 시작</button>' +
@@ -89,6 +91,15 @@ G.Debug = {
         if (!s.board.cells[i]) s.board.cells[i] = G.Board.newItem(s.board, keys[i % keys.length], 1 + (i % 3));
       }
       G.save();
+    }
+    else if (a === 'orders') {
+      s.orders = [];
+      G.Order.fillAll(D, s, G.rng);
+      G.save();
+    }
+    else if (a === 'info') {
+      G.Debug.out('머지 시간 ' + G.fmtTime(s.playMs) + '\n낸 주문 ' + s.served +
+        '\n돈 ' + s.money + '\n복구 ' + s.restore + '단계\n조작 안내 남음: ' + (G.tutText() || '없음'));
     }
     else if (a === 'wipe') {
       G.clearSave();

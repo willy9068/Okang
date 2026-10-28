@@ -5,7 +5,7 @@ var vm = require('vm');
 
 var ctx = { Math: Math, JSON: JSON };
 vm.createContext(ctx);
-['data.js', 'rng.js', 'board.js'].forEach(function (f) {
+['data.js', 'rng.js', 'board.js', 'order.js', 'restore.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board;
@@ -134,6 +134,95 @@ function genIdx(s, chain) {
   o.cols = 99;
   check('보드 크기가 다르면 불러오지 않음', B.deserialize(D, o) === null);
   check('잘못된 저장은 불러오지 않음', B.deserialize(D, null) === null);
+})();
+
+// --- 주문 ---
+function makeState() {
+  var st = { money: 0, restore: 0, board: emptyBoard(), orders: [], served: 0 };
+  return st;
+}
+(function () {
+  var st = makeState(), rng = G.makeRng(3);
+  G.Order.fillAll(D, st, rng);
+  check('주문 3개', st.orders.length === D.orders.count);
+  var custs = st.orders.map(function (o) { return o.cust; });
+  check('손님이 겹치지 않음', custs[0] !== custs[1] && custs[1] !== custs[2] && custs[0] !== custs[2]);
+
+  // 단계 범위: 낡은 가게는 levelsByStage[0] 안 (2개짜리는 한 단계 낮음)
+  var okRange = true, two = 0, r2 = G.makeRng(9);
+  for (var k = 0; k < 300; k++) {
+    var o = G.Order.make(D, 0, r2, []);
+    if (o.needs.length === 2) two++;
+    o.needs.forEach(function (n) {
+      var lo = Math.min.apply(null, D.orders.levelsByStage[0]);
+      var hi = Math.max.apply(null, D.orders.levelsByStage[0]);
+      if (o.needs.length === 2) { lo = Math.max(2, lo - D.orders.twoLevelDown); hi = hi - D.orders.twoLevelDown; }
+      if (n.lv < lo || n.lv > hi) okRange = false;
+    });
+    var sum = 0;
+    o.needs.forEach(function (n) { sum += D.orders.rewardByLv[n.lv]; });
+    if (sum !== o.reward) okRange = false;
+  }
+  check('주문 단계와 보상이 표대로', okRange);
+  check('2개짜리 주문이 섞여 나옴', two > 30 && two < 150);
+
+  var hi1 = 0, r3 = G.makeRng(11);
+  for (k = 0; k < 200; k++) G.Order.make(D, 1, r3, []).needs.forEach(function (n) { hi1 = Math.max(hi1, n.lv); });
+  check('복구 1단계 뒤에는 5단계 요리도 주문', hi1 === 5);
+})();
+
+(function () {
+  var st = makeState(), rng = G.makeRng(4);
+  st.orders = [
+    { cust: 1, needs: [{ chain: 'oden', lv: 3, done: false }], reward: 35 },
+    { cust: 2, needs: [{ chain: 'gukbap', lv: 2, done: false }, { chain: 'gukbap', lv: 2, done: false }], reward: 30 },
+    { cust: 3, needs: [{ chain: 'oden', lv: 4, done: false }], reward: 80 }
+  ];
+  st.board.cells[10] = B.newItem(st.board, 'oden', 2);
+  var r = G.Order.deliver(D, st, 0, 10, rng);
+  check('맞지 않는 요리는 낼 수 없음', !r.ok && st.board.cells[10] && st.money === 0);
+
+  st.board.cells[11] = B.newItem(st.board, 'oden', 3);
+  r = G.Order.deliver(D, st, 0, 11, rng);
+  check('맞는 요리 끌어 놓기 → 돈', r.ok && r.completed && st.money === 35 && st.board.cells[11] === null);
+  check('끝난 주문은 새 주문으로', st.orders[0].needs.every(function (n) { return !n.done; }) && st.served === 1);
+
+  st.board.cells[20] = B.newItem(st.board, 'gukbap', 2);
+  r = G.Order.deliver(D, st, 1, 20, rng);
+  check('2개짜리는 1개만 내면 아직 안 끝남', r.ok && !r.completed && st.money === 35 && st.orders[1].needs[0].done);
+  check('보드에 1개 더 없으면 탭으로 못 냄', !G.Order.serve(D, st, 1, rng).ok);
+  st.board.cells[21] = B.newItem(st.board, 'gukbap', 2);
+  check('남은 요리가 보드에 있으면 체크', G.Order.haveFlags(st.orders[1], st.board).every(function (h) { return h; }));
+  r = G.Order.serve(D, st, 1, rng);
+  check('주문 칸 탭으로 남은 요리 내기', r.ok && st.money === 65 && st.board.cells[21] === null);
+
+  // 같은 요리 2개가 필요하면 보드에 2개 있어야 함
+  st.orders[2] = { cust: 3, needs: [{ chain: 'oden', lv: 2, done: false }, { chain: 'oden', lv: 2, done: false }], reward: 30 };
+  st.board.cells[10] = null;   // 앞에서 남은 어묵 2단계 치움
+  st.board.cells[30] = B.newItem(st.board, 'oden', 2);
+  check('같은 요리 2개 필요한데 1개뿐이면 못 냄', G.Order.readyOnBoard(st.orders[2], st.board) === null);
+  st.board.cells[31] = B.newItem(st.board, 'oden', 2);
+  var cells = G.Order.readyOnBoard(st.orders[2], st.board);
+  check('같은 요리 2개 있으면 서로 다른 칸', cells && cells.length === 2 && cells[0] !== cells[1]);
+
+  check('생성기는 낼 수 없음', !G.Order.deliver(D, st, 2, 0, rng).ok);
+  check('저장된 주문 검사', G.Order.valid(D, st.orders) && !G.Order.valid(D, [{ needs: [] }]));
+})();
+
+// --- 복구 ---
+(function () {
+  var st = makeState();
+  var c1 = D.restore.costs[0], c2 = D.restore.costs[1];
+  st.money = c1 - 1;
+  check('돈이 부족하면 복구 불가', G.Restore.apply(D, st) === 'noMoney' && st.restore === 0 && st.money === c1 - 1);
+  st.money = c1 + 10;
+  check('복구하면 비용 차감, 단계 진행', G.Restore.apply(D, st) === 'ok' && st.restore === 1 && st.money === 10);
+  check('다음 비용은 2단계 비용', G.Restore.cost(D, st) === c2);
+  st.money = c2;
+  G.Restore.apply(D, st);
+  check('2단계까지 복구', st.restore === 2 && st.money === 0);
+  st.money = 99999;
+  check('더 복구할 것이 없음', G.Restore.apply(D, st) === 'max' && G.Restore.cost(D, st) === null && st.money === 99999);
 })();
 
 console.log('통과 ' + pass + ' / 실패 ' + fail);
