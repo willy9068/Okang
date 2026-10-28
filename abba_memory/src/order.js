@@ -1,6 +1,6 @@
 // 손님 주문 규칙 (순수 계산만. 화면 그리기는 ui.js)
 // 주문 하나: { cust: 손님 id, needs: [{ chain, lv, done }], reward }
-// st(게임 상태): { money, restore, board, orders, ... }
+// st(게임 상태): { money, expand, board, orders, ... }
 var G = G || {};
 
 G.Order = {
@@ -28,7 +28,7 @@ G.Order = {
   fillAll: function (data, st, rng) {
     if (!st.orders) st.orders = [];
     while (st.orders.length < data.orders.count) {
-      st.orders.push(G.Order.make(data, st.restore, rng, G.Order.busy(st, -1)));
+      st.orders.push(G.Order.make(data, st.expand, rng, G.Order.busy(st, -1)));
     }
   },
 
@@ -87,7 +87,7 @@ G.Order = {
     var o = st.orders[oi];
     st.money += o.reward;
     st.served = (st.served || 0) + 1;
-    st.orders[oi] = G.Order.make(data, st.restore, rng, G.Order.busy(st, oi));
+    st.orders[oi] = G.Order.make(data, st.expand, rng, G.Order.busy(st, oi));
     return o;
   },
 

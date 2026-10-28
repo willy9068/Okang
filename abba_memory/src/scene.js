@@ -1,9 +1,9 @@
-// 장면 상태: 도입 → 머지 → 복구 → 스토리 → … → 마무리
-// 1일차에는 머지 장면만 있습니다. 나머지는 3~4일차에 채웁니다.
+// 장면 상태: 'merge'(머지 보드) / 'story'(대화창: 도입·스토리 1·2·마무리) / 'end'(끝 화면)
+// 흐름: 도입 → 머지 → 확장 1 → 스토리 1 → 머지 → 확장 2 → 스토리 2 → 마무리 → 끝 화면
 var G = G || {};
 
 G.Scene = {
-  list: ['intro', 'merge', 'story', 'ending'],
+  list: ['merge', 'story', 'end'],
   current: 'merge',
 
   go: function (name) {

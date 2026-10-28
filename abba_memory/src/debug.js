@@ -23,7 +23,7 @@ G.Debug = {
     el.innerHTML =
       '<b>디버그 (D키)</b>' +
       '<button data-a="money">돈 +1,000</button>' +
-      '<button data-a="restore">복구 단계 +1</button>' +
+      '<button data-a="expand">확장 단계 건너뛰기</button>' +
       '<button data-a="reset">보드 초기화</button>' +
       '<div class="row"><select id="dbgChain">' + chainOpts + '</select>' +
       '<select id="dbgLv">' + lvOpts + '</select>' +
@@ -31,7 +31,9 @@ G.Debug = {
       '<button data-a="fill">보드 가득 채우기</button>' +
       '<button data-a="orders">주문 새로 뽑기</button>' +
       '<button data-a="info">진행 정보 (걸린 시간·주문 수)</button>' +
-      '<button data-a="story" disabled>스토리 장면 보기 (3일차)</button>' +
+      '<div class="row"><select id="dbgStory">' +
+        Object.keys(G.STORY).map(function (k) { return '<option value="' + k + '">' + k + '</option>'; }).join('') +
+        '</select><button data-a="story">스토리 보기</button></div>' +
       '<label><input type="checkbox" id="dbgFps"> FPS 표시</label>' +
       '<button data-a="wipe">저장 지우고 새로 시작</button>' +
       '<button data-a="images">이미지 상태</button>' +
@@ -67,9 +69,17 @@ G.Debug = {
   act: function (a) {
     var D = G.DATA, s = G.state;
     if (a === 'money') { s.money += 1000; G.save(); }
-    else if (a === 'restore') {
-      s.restore = Math.min(D.texts.shopStage.length - 1, s.restore + 1);
-      G.save();
+    else if (a === 'expand') {
+      // 비용만큼 돈을 주고 확장 (확장 뒤 스토리도 그대로 나옴)
+      var cost = G.Expand.cost(D, s);
+      if (cost === null) { G.Debug.out('더 확장할 단계가 없습니다.'); return; }
+      if (!G.Scene.is('merge')) { G.Debug.out('머지 화면에서만 됩니다.'); return; }
+      s.money += cost;
+      G.tapExpand();
+    }
+    else if (a === 'story') {
+      // 진행과 상관없이 보기만 함 (끝나면 머지로)
+      G.openStory(document.getElementById('dbgStory').value, true);
     }
     else if (a === 'reset') {
       s.board = G.Board.create(D);
@@ -99,11 +109,13 @@ G.Debug = {
     }
     else if (a === 'info') {
       G.Debug.out('머지 시간 ' + G.fmtTime(s.playMs) + '\n낸 주문 ' + s.served +
-        '\n돈 ' + s.money + '\n복구 ' + s.restore + '단계\n조작 안내 남음: ' + (G.tutText() || '없음'));
+        '\n돈 ' + s.money + '\n확장 ' + s.expand + '단계\n조작 안내 남음: ' + (G.tutText() || '없음'));
     }
     else if (a === 'wipe') {
       G.clearSave();
       G.newGame();
+      G.save();
+      G.playNextStory();
       G.Debug.out('저장을 지우고 새로 시작했습니다.');
     }
     else if (a === 'images') {

@@ -11,7 +11,7 @@
 
 ### 0-1. 사용 순서
 1. 2장 **스타일 블록**을 모든 프롬프트 앞에 한 글자도 바꾸지 말고 붙입니다.
-2. **먼저 3장만** 만듭니다: ① 아버지 정면(`char_father`) ② 어묵 1단계 아이콘(`oden_1`) ③ 낡은 가게(`shop_0`). 세 장이 한 게임처럼, 그리고 참고 이미지 3번(한식당)과 같은 게임처럼 보이면 나머지를 진행합니다. 안 맞으면 모델·LoRA·스타일 참조부터 바꿉니다.
+2. **먼저 3장만** 만듭니다: ① 아버지 정면(`char_father`) ② 어묵 1단계 아이콘(`oden_1`) ③ 처음 가게(`shop_0`). 세 장이 한 게임처럼, 그리고 참고 이미지 3번(한식당)과 같은 게임처럼 보이면 나머지를 진행합니다. 안 맞으면 모델·LoRA·스타일 참조부터 바꿉니다.
 3. 항목당 4장 이상 뽑아 **직접 고르고**, 고른 이유와 고친 내용을 7장 기록표에 씁니다.
 4. 이미지가 없어도 게임은 색 블록으로 돌아가니, 이미지가 늦어져도 개발은 막히지 않습니다.
 
@@ -105,15 +105,15 @@ modern car, neon, glossy plastic, horror, dark gloomy
 | 12 | 생성기: 가마솥 (돼지국밥) | gen_gukbap.png | 256×256 | 투명 | ★ |
 | 13 | 보드 칸 (검은 쟁반) | ui_cell.png | 128×128 | 투명 | ★ |
 | 14 | 보드 판 (나무 카운터) | ui_board.png | 1080×1200 | 투명 | ★ |
-| 15 | 가게: 낡은 상태 | shop_0.png | 1080×660 | 있음 | ★ |
-| 16 | 가게: 1단계 복구 | shop_1.png | 1080×660 | 있음 | ★ |
-| 17 | 가게: 2단계 복구 | shop_2.png | 1080×660 | 있음 | ★ |
+| 15 | 가게: 처음 상태 | shop_0.png | 1080×660 | 있음 | ★ |
+| 16 | 가게: 1단계 확장 | shop_1.png | 1080×660 | 있음 | ★ |
+| 17 | 가게: 2단계 확장 | shop_2.png | 1080×660 | 있음 | ★ |
 | 18~21 | 손님 4명 (상반신) | cust_1 ~ cust_4.png | 256×256 | 투명 | ★ |
 | 22 | 주문 말풍선 | ui_order.png | 256×256 | 투명 | ☆ |
 | 23 | 돈 아이콘 (동전) | ui_coin.png | 96×96 | 투명 | ☆ |
 | 24 | 상단 HUD 틀 | ui_hud.png | 1080×112 | 투명 | ☆ |
 | 25 | 버튼 (청록, 금테) | ui_button.png | 384×128 | 투명 | ☆ |
-| 26 | 복구 아이콘 (망치) | ui_restore.png | 128×128 | 투명 | ☆ |
+| 26 | 확장 아이콘 (망치) | ui_expand.png | 128×128 | 투명 | ☆ |
 | 27 | 아버지 기본 (상반신) | char_father.png | 768×1024 | 투명 | ☆ (최소) |
 | 28 | 어머니(태자) 기본 (상반신) | char_mother.png | 768×1024 | 투명 | ☆ (최소) |
 | 29 | 대화창 (9분할용) | ui_dialog.png | 1024×384 | 투명 | ☆ (최소) |
@@ -129,7 +129,7 @@ modern car, neon, glossy plastic, horror, dark gloomy
 
 ```
 y    0 ┌──────────────────────────┐
-       │ ui_hud (돈, 복구 단계)      │ 0~112
+       │ ui_hud (돈, 확장 단계)      │ 0~112
   112  │                          │
        │ shop_0/1/2 (가게 안쪽)      │ 0~660 (HUD 뒤까지 깔림)
        │  손님 cust_1~4 + 주문 말풍선  │ 손님 머리 y≈300~520
@@ -239,20 +239,20 @@ colors, on a plain white background, isolated, centered
 ### 4-6. 가게 3단계 (#15~17) — 첫 3장 시험 ③은 shop_0
 **구도는 세 장 모두 같게** (같은 시드, 묘사만 바꿈). 정면에서 본 작은 식당 안쪽, 아래 1/3에 카운터, 뒤쪽 벽에 창문과 선반.
 ```
-(shop_0 낡은 상태)
+(shop_0 처음 상태)
 interior of a small old Korean eatery in a 1990 Busan market, front view, a long
 wooden counter across the bottom third, behind it an empty dusty room, cracked
 cream tiles, faded wallpaper peeling, a broken wooden shelf, dim light from a
 dirty window, a few cardboard boxes, cobwebs in the corner, still cozy and cute,
 empty blank signboard above, no people, wide horizontal composition
 
-(shop_1 1단계 복구)
+(shop_1 1단계 확장)
 same interior and same composition, cleaned and repaired, fresh cream tiles,
 mended wooden shelf with aluminum pots and bowls, a clean window with afternoon
 sunlight, a small potted plant, two wooden stools at the counter, warm hanging
 lamp, empty blank signboard, no people
 
-(shop_2 2단계 복구)
+(shop_2 2단계 확장)
 same interior and same composition, lively and expanded, wall opened to a second
 table area, a window showing the Busan harbor and fishing boats, shelves full of
 earthenware pots and jars, a calendar and a small CRT television on the wall,
@@ -298,7 +298,7 @@ empty center for characters, no people
 (ui_order)   a round white speech bubble with a small tail at the bottom left,
              thick dark brown outline, empty inside
 (ui_coin)    a shiny gold coin with a simple flower emblem, thick outline
-(ui_restore) a small wooden hammer with a red handle tie, thick outline
+(ui_expand) a small wooden hammer with a red handle tie, thick outline
 ```
 각 항목 끝에 `plain white background, isolated, centered`.
 메모: 참고 1·2번 상단 바와 하단 버튼이 기준입니다. ui_dialog는 **9분할**(가장자리 장식은 네 귀퉁이에만, 변은 반복 가능한 단순한 선)로 늘려 쓰므로 가운데에 장식이 있으면 안 됩니다.
@@ -326,7 +326,7 @@ empty center for characters, no people
 - 칸 크기(약 112px)에서 **어묵 1~5단계, 국밥 1~5단계가 서로 구분되는가**, 특히 4단계와 5단계
 - 어묵 체인과 국밥 체인이 **색만 봐도 갈리는가** (주황 vs 베이지)
 - 아버지·어머니·손님이 참고 3번 인물들과 같은 게임처럼 보이는가 (외곽선 굵기, 등신)
-- 가게 3장이 같은 구도인가, 복구 차이가 한눈에 보이는가
+- 가게 3장이 같은 구도인가, 확장 차이가 한눈에 보이는가
 - 1990년에 없던 물건이 섞이지 않았는가
 - 어머니가 특정 배우를 닮지 않았는가
 

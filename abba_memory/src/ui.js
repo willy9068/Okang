@@ -42,16 +42,24 @@ G.UI = {
     ctx.fillRect(0, 0, D.view.w, D.view.h);
     G.UI.drawShop(ctx, D, C);
     G.UI.drawHud(ctx, D, C);
-    G.UI.drawRestoreBtn(ctx, D, C, now);
+    G.UI.drawExpandBtn(ctx, D, C, now);
     G.UI.drawOrders(ctx, D, C, now);
     G.UI.drawPanel(ctx, D, C);
     G.UI.drawBoard(ctx, D, C, now);
     G.UI.drawEffects(ctx, D, C, now);
     G.UI.drawHint(ctx, D, C, now);
+    if (G.Scene.is('story') && G.story) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, (now - G.story.open) / D.story.fadeMs);
+      G.UI.drawStory(ctx, D, C, now);
+      ctx.restore();
+    } else if (G.Scene.is('end')) {
+      G.UI.drawEnd(ctx, D, C);
+    }
   },
 
   drawShop: function (ctx, D, C) {
-    var L = D.layout.shop, st = G.state.restore;
+    var L = D.layout.shop, st = G.state.expand;
     var im = G.UI.img('shop_' + st);
     if (im) { ctx.drawImage(im, 0, L.y, D.view.w, L.h); return; }
     // placeholder: 벽 + 카운터 + 단계 글자
@@ -70,12 +78,12 @@ G.UI = {
     ctx.fillText('shop_' + st, 8, L.y + L.h - 4);
   },
 
-  // 복구 버튼: 비용과 모은 돈 막대. 돈이 충분하면 반짝임
-  drawRestoreBtn: function (ctx, D, C, now) {
-    var cost = G.Restore.cost(D, G.state);
+  // 확장 버튼: 비용과 모은 돈 막대. 돈이 충분하면 반짝임
+  drawExpandBtn: function (ctx, D, C, now) {
+    var cost = G.Expand.cost(D, G.state);
     if (cost === null) return;
-    var R = D.layout.restoreBtn, ok = G.state.money >= cost;
-    var press = G.input && G.input.button === 'restore';
+    var R = D.layout.expandBtn, ok = G.state.money >= cost;
+    var press = G.input && G.input.button === 'expand';
     var k = press ? 0.96 : ok ? 1 + 0.03 * Math.sin(now / 180) : 1;
     ctx.save();
     ctx.translate(R.x + R.w / 2, R.y + R.h / 2);
@@ -96,12 +104,12 @@ G.UI = {
       G.UI.roundRect(ctx, 10, R.h - 9, Math.max(5, (R.w - 20) * p), 5, 2);
       ctx.fillStyle = C.mergeGlow; ctx.fill();
     }
-    var icon = G.UI.img('ui_restore');
+    var icon = G.UI.img('ui_expand');
     if (icon) ctx.drawImage(icon, 10, 4, 24, 24);
     ctx.fillStyle = ok ? '#FFFFFF' : '#C9CED8';
     ctx.font = 'bold 15px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(D.texts.restoreBtn + '  ' + G.state.money.toLocaleString() + ' / ' + cost.toLocaleString(), R.w / 2, R.h / 2 - 3);
+    ctx.fillText(D.texts.expandBtn + '  ' + G.state.money.toLocaleString() + ' / ' + cost.toLocaleString(), R.w / 2, R.h / 2 - 3);
     ctx.restore();
   },
 
@@ -193,7 +201,7 @@ G.UI = {
     ctx.stroke();
   },
 
-  // 돈 날아가기, 복구 번쩍
+  // 돈 날아가기, 확장 번쩍
   drawEffects: function (ctx, D, C, now) {
     G.anims.forEach(function (a) {
       var t = (now - a.t0) / a.dur;
@@ -208,7 +216,7 @@ G.UI = {
         ctx.fillStyle = C.gold; ctx.fill();
         ctx.lineWidth = 2; ctx.strokeStyle = C.outline; ctx.stroke();
         ctx.restore();
-      } else if (a.type === 'restore') {
+      } else if (a.type === 'expand') {
         ctx.save();
         ctx.globalAlpha = Math.sin(t * Math.PI) * 0.8;
         ctx.fillStyle = '#FFF6DA';
@@ -240,10 +248,10 @@ G.UI = {
     ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
     ctx.fillText(G.state.money.toLocaleString(), 56, 29);
-    // 복구 단계
+    // 확장 단계
     ctx.textAlign = 'right';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(D.texts.shopStage[G.state.restore], w - 22, 29);
+    ctx.fillText(D.texts.shopStage[G.state.expand], w - 22, 29);
   },
 
   drawPanel: function (ctx, D, C) {
@@ -411,5 +419,199 @@ G.UI = {
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(text, D.view.w / 2, H.y + H.h / 2);
+  },
+
+  // ---------- 스토리 (대화창 오버레이) ----------
+
+  // 기억 장면 배경: 밤 + 등불 (bg_memory 이미지가 있으면 그것)
+  drawNight: function (ctx, D, C) {
+    var im = G.UI.img('bg_memory');
+    if (im) { ctx.drawImage(im, 0, 0, D.view.w, D.view.h); return; }
+    var g = ctx.createLinearGradient(0, 0, 0, D.view.h);
+    g.addColorStop(0, C.night); g.addColorStop(1, C.nightDeep);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, D.view.w, D.view.h);
+    [[70, 120], [190, 90], [330, 110], [460, 80]].forEach(function (p) {
+      var rg = ctx.createRadialGradient(p[0], p[1], 2, p[0], p[1], 46);
+      rg.addColorStop(0, 'rgba(255,200,87,0.9)'); rg.addColorStop(1, 'rgba(255,200,87,0)');
+      ctx.fillStyle = rg;
+      ctx.fillRect(p[0] - 46, p[1] - 46, 92, 92);
+    });
+  },
+
+  // 글자 폭에 맞춰 줄바꿈 (띄어쓰기 우선, 긴 단어는 글자 단위)
+  wrap: function (ctx, text, maxW) {
+    var out = [], line = '';
+    text.split(' ').forEach(function (word) {
+      var t = line ? line + ' ' + word : word;
+      if (ctx.measureText(t).width <= maxW) { line = t; return; }
+      if (line) out.push(line);
+      line = '';
+      for (var i = 0; i < word.length; i++) {
+        if (ctx.measureText(line + word[i]).width > maxW) { out.push(line); line = ''; }
+        line += word[i];
+      }
+    });
+    if (line) out.push(line);
+    return out;
+  },
+
+  // 인물 한 명 (active = 말하는 중이면 밝고 조금 크게)
+  drawPortrait: function (ctx, D, C, who, active) {
+    var r = D.storyLayout[who];
+    ctx.save();
+    ctx.globalAlpha *= active ? 1 : 0.4;
+    var k = active ? 1.04 : 1;
+    ctx.translate(r.x + r.w / 2, r.y + r.h);
+    ctx.scale(k, k);
+    ctx.translate(-r.w / 2, -r.h);
+    var im = G.UI.img('char_' + who);
+    if (im) {
+      var s = Math.min(r.w / im.width, r.h / im.height);
+      ctx.drawImage(im, (r.w - im.width * s) / 2, r.h - im.height * s, im.width * s, im.height * s);
+    } else {
+      // placeholder: 상반신 (몸통 + 머리)
+      var col = C[who], cx = r.w / 2;
+      G.UI.roundRect(ctx, cx - 95, r.h - 190, 190, 200, 60);
+      ctx.fillStyle = col[0]; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = C.outline; ctx.stroke();
+      ctx.fillStyle = col[1];
+      if (who === 'father') {   // 멜빵
+        ctx.fillRect(cx - 60, r.h - 190, 22, 200);
+        ctx.fillRect(cx + 38, r.h - 190, 22, 200);
+        ctx.fillRect(cx - 60, r.h - 90, 120, 100);
+      } else {                  // 앞치마
+        G.UI.roundRect(ctx, cx - 55, r.h - 150, 110, 160, 20);
+        ctx.fill();
+      }
+      ctx.beginPath(); ctx.arc(cx, r.h - 250, 82, 0, Math.PI * 2);
+      ctx.fillStyle = '#F2C9A0'; ctx.fill();
+      ctx.lineWidth = 4; ctx.strokeStyle = C.outline; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, r.h - 262, 84, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.lineWidth = 26; ctx.strokeStyle = '#2B2420'; ctx.stroke();
+      ctx.fillStyle = C.outline;
+      ctx.beginPath(); ctx.arc(cx - 28, r.h - 245, 6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 28, r.h - 245, 6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  },
+
+  choiceRect: function (k) {
+    var L = G.DATA.storyLayout.choice;
+    return { x: L.x, y: L.y + k * (L.h + L.gap), w: L.w, h: L.h };
+  },
+
+  choiceAt: function (x, y, n) {
+    for (var k = 0; k < n; k++) if (G.inRect(G.UI.choiceRect(k), x, y)) return k;
+    return -1;
+  },
+
+  drawStory: function (ctx, D, C, now) {
+    var run = G.story.run, c = G.Story.current(run);
+    if (c.kind === 'end') return;
+    var who = c.kind === 'line' ? c.who : 'father';   // 고르는 동안은 '나'가 밝게
+    G.UI.drawNight(ctx, D, C);
+    G.UI.drawPortrait(ctx, D, C, 'father', who === 'father');
+    G.UI.drawPortrait(ctx, D, C, 'mother', who === 'mother');
+
+    var B = D.storyLayout.box, mono = c.kind === 'line' && who === 'mono';
+    // 대화창
+    var im = G.UI.img('ui_dialog');
+    if (mono) {
+      G.UI.roundRect(ctx, B.x, B.y, B.w, B.h, 16);
+      ctx.fillStyle = 'rgba(20,28,51,0.88)'; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
+    } else if (im) {
+      ctx.drawImage(im, B.x, B.y, B.w, B.h);
+    } else {
+      G.UI.roundRect(ctx, B.x, B.y, B.w, B.h, 16);
+      ctx.fillStyle = C.cream; ctx.fill();
+      ctx.lineWidth = 5; ctx.strokeStyle = C.navy; ctx.stroke();
+      G.UI.roundRect(ctx, B.x + 6, B.y + 6, B.w - 12, B.h - 12, 12);
+      ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
+    }
+
+    // 이름표 (나: 왼쪽, 태자: 오른쪽, 장면 설명·속마음은 없음)
+    if (who === 'father' || who === 'mother') {
+      var name = D.names[who];
+      ctx.font = 'bold 17px sans-serif';
+      var nw = ctx.measureText(name).width + 34;
+      var nx = who === 'father' ? B.x + 18 : B.x + B.w - 18 - nw;
+      G.UI.roundRect(ctx, nx, B.y - 18, nw, 34, 12);
+      ctx.fillStyle = C.navy; ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = C.gold; ctx.stroke();
+      ctx.fillStyle = C.cream; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(name, nx + nw / 2, B.y - 1);
+    }
+
+    // 글자 (한 글자씩)
+    var full = c.kind === 'line' ? c.text : c.prompt;
+    var n = c.kind === 'line'
+      ? Math.min(full.length, Math.floor((now - G.story.t0) / 1000 * D.story.charsPerSec))
+      : full.length;
+    ctx.font = (mono ? 'italic ' : '') + '19px sans-serif';
+    ctx.fillStyle = mono ? C.mono : (who === 'narr' ? '#5A4A3A' : C.outline);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    var lines = G.UI.wrap(ctx, full, B.w - 48), shown = 0;
+    lines.forEach(function (l, i) {
+      var part = l.slice(0, Math.max(0, n - shown));
+      shown += l.length + 1;   // 줄바꿈 자리의 띄어쓰기 몫
+      ctx.fillText(part, B.x + 24, B.y + 34 + i * 30);
+    });
+    if (c.kind === 'line' && n >= full.length && Math.floor(now / 400) % 2 === 0) {
+      ctx.fillStyle = mono ? C.mono : C.navy;
+      ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+      ctx.font = '16px sans-serif';
+      ctx.fillText(D.texts.tapNext, B.x + B.w - 20, B.y + B.h - 14);
+    }
+
+    // 선택지 3개
+    if (c.kind === 'choice') {
+      c.options.forEach(function (o, k) {
+        var r = G.UI.choiceRect(k);
+        G.UI.roundRect(ctx, r.x, r.y, r.w, r.h, 14);
+        ctx.fillStyle = C.cream; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = C.navy; ctx.stroke();
+        ctx.fillStyle = C.gold;
+        ctx.beginPath(); ctx.arc(r.x + 28, r.y + r.h / 2, 13, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = C.navy; ctx.font = 'bold 15px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String(k + 1), r.x + 28, r.y + r.h / 2 + 1);
+        ctx.fillStyle = C.outline; ctx.font = '17px sans-serif';
+        ctx.textAlign = 'left';
+        var ol = G.UI.wrap(ctx, o.text, r.w - 64);
+        ol.forEach(function (t, i) {
+          ctx.fillText(t, r.x + 50, r.y + r.h / 2 + (i - (ol.length - 1) / 2) * 22);
+        });
+      });
+    }
+  },
+
+  // ---------- 끝 화면 ----------
+  endButtons: function () {
+    return {
+      restart: { x: 110, y: 600, w: 320, h: 56 },
+      cont: { x: 110, y: 676, w: 320, h: 56 }
+    };
+  },
+
+  drawEnd: function (ctx, D, C) {
+    var T = D.texts, b = G.UI.endButtons();
+    G.UI.drawNight(ctx, D, C);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.mono; ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(T.endTitle, D.view.w / 2, 330);
+    ctx.fillStyle = C.cream; ctx.font = '18px sans-serif';
+    T.endLines.forEach(function (l, i) { ctx.fillText(l, D.view.w / 2, 400 + i * 30); });
+    ctx.fillStyle = 'rgba(244,230,204,0.6)'; ctx.font = '14px sans-serif';
+    ctx.fillText(T.endTime.replace('{time}', G.fmtTime(G.state.playMs)), D.view.w / 2, 520);
+    [[b.restart, T.endRestart, C.teal], [b.cont, T.endContinue, '#4A5468']].forEach(function (x) {
+      var r = x[0];
+      G.UI.roundRect(ctx, r.x, r.y, r.w, r.h, 14);
+      ctx.fillStyle = x[2]; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = C.gold; ctx.stroke();
+      ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 18px sans-serif';
+      ctx.fillText(x[1], r.x + r.w / 2, r.y + r.h / 2);
+    });
   }
 };

@@ -3,7 +3,7 @@
 var G = G || {};
 
 G.DATA = {
-  saveKey: 'abba_memory_v2',   // 저장 형식이 바뀌면 숫자를 올립니다 (v2: 주문·복구 추가)
+  saveKey: 'abba_memory_v3',   // 저장 형식이 바뀌면 숫자를 올립니다 (v3: 확장 이름 변경·스토리)
   seed: 20261028,              // 시드 난수 (같은 시드 = 같은 결과)
 
   // 화면: 세로 9:16. 코드는 540×960 좌표로 그리고 이미지는 2배(1080×1920)로 만듭니다.
@@ -15,7 +15,7 @@ G.DATA = {
     shop: { y: 0, h: 330 },       // 가게 그림 (HUD 뒤까지 깔림)
     panel: { y: 330, h: 600 },    // 나무 카운터 보드 판
     hint: { y: 930, h: 30 },      // 맨 아래 안내 문구 줄
-    restoreBtn: { x: 160, y: 62, w: 220, h: 38 },   // 복구 버튼
+    expandBtn: { x: 160, y: 62, w: 220, h: 38 },   // 확장 버튼
     orders: { y: 108, w: 160, h: 214, gap: 15 }     // 주문 칸 3개 (가로로 나란히)
   },
 
@@ -79,20 +79,37 @@ G.DATA = {
   // 손님 주문 (임시)
   orders: {
     count: 3,                  // 동시에 뜨는 주문 수
-    // 복구 단계별로 주문에 나오는 요리 단계 (같은 숫자가 많을수록 자주 나옴)
+    // 확장 단계별로 주문에 나오는 요리 단계 (같은 숫자가 많을수록 자주 나옴)
     levelsByStage: [
-      [2, 3, 3, 4],            // 낡은 가게
-      [3, 4, 4, 5],            // 복구 1단계 이후
-      [3, 4, 4, 5]             // 복구 2단계 이후 (데모 마무리 뒤 계속 플레이)
+      [2, 3, 3, 4],            // 작은 가게
+      [3, 4, 4, 5],            // 확장 1단계 이후
+      [3, 4, 4, 5]             // 확장 2단계 이후 (데모 마무리 뒤 계속 플레이)
     ],
     twoChance: 0.3,            // 요리 2개를 요구하는 주문이 나올 확률
     twoLevelDown: 1,           // 2개짜리 주문은 단계를 이만큼 낮춤 (최소 2단계)
     rewardByLv: [0, 5, 15, 35, 80, 170]   // 요리 단계별 보상 (0번은 안 씀)
   },
 
-  // 가게 복구 비용 (임시, tools/balance.js로 맞춘 값. 한 판 머지 약 3분 + 4분 목표)
-  restore: {
-    costs: [520, 780]          // 1단계, 2단계
+  // 가게 확장 비용 (임시). 2026-10-28 직접 해 본 시간(520/780에서 1분 + 2분 30초)을 보고 약 30% 줄임
+  expand: {
+    costs: [360, 550]          // 1단계, 2단계
+  },
+
+  // 스토리 (대사는 story_data.js)
+  story: {
+    intro: 'intro',                     // 새 게임 시작 때
+    afterExpand: [null, ['story1'], ['story2', 'ending']],   // 확장 단계별로 이어서 볼 장면
+    delayMs: 900,                       // 확장 연출이 끝나고 대화창이 뜨기까지
+    charsPerSec: 32,                    // 한 글자씩 나오는 속도
+    fadeMs: 250                         // 대화창 나타나는 시간
+  },
+
+  // 스토리 화면 배치 (540×960 좌표)
+  storyLayout: {
+    father: { x: 6, y: 330, w: 280, h: 400 },     // 나 (왼쪽)
+    mother: { x: 254, y: 330, w: 280, h: 400 },   // 태자 (오른쪽)
+    box: { x: 16, y: 700, w: 508, h: 200 },       // 대화창
+    choice: { x: 40, y: 430, w: 460, h: 66, gap: 14 }   // 선택지 버튼 3개
   },
 
   // 조작 안내 (처음 한 번씩, 순서대로)
@@ -105,7 +122,7 @@ G.DATA = {
   // 밸런스 계산용 (tools/balance.js만 씀): 사람이 한 동작에 쓰는 시간(초)
   balanceSim: {
     secTap: 0.7, secMerge: 1.6, secServe: 1.5, secDelete: 1.5,
-    humanFactor: 1.3,          // 고민·실수 몫
+    humanFactor: 0.65,         // 사람 보정. 2026-10-28 직접 플레이(비용 520/780에서 1분+2분30초)에 맞춤
     runs: 30                   // 시드를 바꿔 몇 판 돌릴지
   },
 
@@ -122,20 +139,30 @@ G.DATA = {
     cellRim: '#4A4440',
     mergeGlow: '#FFC857',
     night: '#2A2350',
+    nightDeep: '#141C33',
+    father: ['#E89AAE', '#4F8A5B'],   // placeholder: 분홍 셔츠, 초록 멜빵바지
+    mother: ['#F1E3C8', '#A23B3B'],   // placeholder: 크림 블라우스, 붉은 앞치마
+    mono: '#FFC857',
     shop: ['#7A6A58', '#B58A5A', '#D9A86A']   // 가게 0/1/2단계 placeholder
   },
 
   // 화면 문장 (작성자가 직접 고칠 수 있게 여기 둡니다)
   texts: {
-    shopStage: ['낡은 가게', '복구 1단계', '복구 2단계'],
+    shopStage: ['작은 가게', '확장 1단계', '확장 2단계'],
     hintMerge: '같은 재료 같은 단계끼리 겹치면 다음 단계가 돼요.',
     boardFull: '보드가 가득 찼어요! 아이템을 길게 눌러 치울 수 있어요.',
     deleted: '치웠어요.',
     cantDeleteGen: '생성기는 치울 수 없어요.',
     loadFail: '저장된 진행을 불러오지 못해 새로 시작해요.',
-    restoreBtn: '가게 복구',
-    restoreDone: ['', '가게가 깨끗해졌어요! (스토리 1은 3일차)', '가게가 넓어졌어요! (스토리 2는 3일차)'],
-    restoreAllDone: '복구 완료! 걸린 시간 {time} (마무리 장면은 4일차)',
+    expandBtn: '가게 확장',
+    expandDone: ['', '가게가 한 칸 넓어졌어요!', '가게가 북적이기 시작했어요!'],
+    tapNext: '▼',
+    endTitle: '오캉과 엄마: 아빠의 기억',
+    endLines: ['이야기는 본편으로 이어집니다.', '(데모 · 임시 대사)'],
+    endTime: '머지 시간 {time}',
+    endRestart: '처음부터',
+    endContinue: '가게 계속 하기',
+    restartConfirm: '처음부터 다시 할까요? 지금 진행은 지워져요.',
     noMoney: '돈이 모자라요.',
     serveReady: '내기',
     served: '{name} 손님 +{money}',
@@ -151,6 +178,8 @@ G.DATA = {
     'ui_cell', 'ui_board', 'ui_hud', 'ui_coin', 'fx_merge',
     'shop_0', 'shop_1', 'shop_2',
     'cust_1', 'cust_2', 'cust_3', 'cust_4',
-    'ui_order', 'ui_button', 'ui_restore'
+    'ui_order', 'ui_button', 'ui_expand',
+    'char_father', 'char_mother', 'char_father_smile', 'char_mother_smile',
+    'ui_dialog', 'bg_memory'
   ]
 };

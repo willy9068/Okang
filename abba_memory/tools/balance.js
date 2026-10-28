@@ -1,4 +1,4 @@
-// 밸런스 계산: 가상의 플레이어가 한 판을 돌며 복구까지 걸리는 시간을 어림합니다.
+// 밸런스 계산: 가상의 플레이어가 한 판을 돌며 확장까지 걸리는 시간을 어림합니다.
 // 실행: node tools/balance.js
 // 동작 하나에 드는 시간은 data.js의 balanceSim. 실제 사람 플레이로 꼭 다시 확인해야 합니다.
 var fs = require('fs');
@@ -7,7 +7,7 @@ var vm = require('vm');
 
 var ctx = { Math: Math, JSON: JSON };
 vm.createContext(ctx);
-['data.js', 'rng.js', 'board.js', 'order.js', 'restore.js'].forEach(function (f) {
+['data.js', 'rng.js', 'board.js', 'order.js', 'expand.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board, S = D.balanceSim;
@@ -65,13 +65,13 @@ function genOf(st, chain) {
 
 function play(seed) {
   var rng = G.makeRng(seed);
-  var st = { money: D.startMoney, restore: 0, board: B.create(D), orders: [], served: 0 };
+  var st = { money: D.startMoney, expand: 0, board: B.create(D), orders: [], served: 0 };
   G.Order.fillAll(D, st, rng);
   var t = 0, stageT = [], stageServed = [], lastServed = 0, steps = 0;
   var chains = Object.keys(D.chains);
-  while (st.restore < D.restore.costs.length && steps++ < 20000) {
-    if (G.Restore.can(D, st)) {
-      G.Restore.apply(D, st);
+  while (st.expand < D.expand.costs.length && steps++ < 20000) {
+    if (G.Expand.can(D, st)) {
+      G.Expand.apply(D, st);
       stageT.push(t); stageServed.push(st.served - lastServed); lastServed = st.served;
       t = 0;
       continue;
@@ -103,9 +103,9 @@ for (var k = 0; k < n; k++) {
   }
 }
 function fmt(sec) { sec = Math.round(sec); return Math.floor(sec / 60) + '분 ' + (sec % 60) + '초'; }
-console.log('복구 비용: ' + D.restore.costs.join(', ') + ' / ' + n + '판 평균 (사람 보정 x' + S.humanFactor + ')');
+console.log('확장 비용: ' + D.expand.costs.join(', ') + ' / ' + n + '판 평균 (사람 보정 x' + S.humanFactor + ')');
 for (s = 0; s < 2; s++) {
-  console.log('  복구 ' + (s + 1) + '단계까지: ' + fmt(sum[s] / n) + ' (빠름 ' + fmt(min[s]) + ', 느림 ' + fmt(max[s]) +
+  console.log('  확장 ' + (s + 1) + '단계까지: ' + fmt(sum[s] / n) + ' (빠름 ' + fmt(min[s]) + ', 느림 ' + fmt(max[s]) +
     '), 낸 주문 약 ' + (served[s] / n).toFixed(1) + '개');
 }
 console.log('  머지 합계: ' + fmt((sum[0] + sum[1]) / n));

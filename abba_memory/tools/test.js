@@ -5,7 +5,7 @@ var vm = require('vm');
 
 var ctx = { Math: Math, JSON: JSON };
 vm.createContext(ctx);
-['data.js', 'rng.js', 'board.js', 'order.js', 'restore.js'].forEach(function (f) {
+['data.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js', 'story.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board;
@@ -138,7 +138,7 @@ function genIdx(s, chain) {
 
 // --- 주문 ---
 function makeState() {
-  var st = { money: 0, restore: 0, board: emptyBoard(), orders: [], served: 0 };
+  var st = { money: 0, expand: 0, board: emptyBoard(), orders: [], served: 0 };
   return st;
 }
 (function () {
@@ -148,7 +148,7 @@ function makeState() {
   var custs = st.orders.map(function (o) { return o.cust; });
   check('손님이 겹치지 않음', custs[0] !== custs[1] && custs[1] !== custs[2] && custs[0] !== custs[2]);
 
-  // 단계 범위: 낡은 가게는 levelsByStage[0] 안 (2개짜리는 한 단계 낮음)
+  // 단계 범위: 작은 가게는 levelsByStage[0] 안 (2개짜리는 한 단계 낮음)
   var okRange = true, two = 0, r2 = G.makeRng(9);
   for (var k = 0; k < 300; k++) {
     var o = G.Order.make(D, 0, r2, []);
@@ -168,7 +168,7 @@ function makeState() {
 
   var hi1 = 0, r3 = G.makeRng(11);
   for (k = 0; k < 200; k++) G.Order.make(D, 1, r3, []).needs.forEach(function (n) { hi1 = Math.max(hi1, n.lv); });
-  check('복구 1단계 뒤에는 5단계 요리도 주문', hi1 === 5);
+  check('확장 1단계 뒤에는 5단계 요리도 주문', hi1 === 5);
 })();
 
 (function () {
@@ -209,20 +209,81 @@ function makeState() {
   check('저장된 주문 검사', G.Order.valid(D, st.orders) && !G.Order.valid(D, [{ needs: [] }]));
 })();
 
-// --- 복구 ---
+// --- 확장 ---
 (function () {
   var st = makeState();
-  var c1 = D.restore.costs[0], c2 = D.restore.costs[1];
+  var c1 = D.expand.costs[0], c2 = D.expand.costs[1];
   st.money = c1 - 1;
-  check('돈이 부족하면 복구 불가', G.Restore.apply(D, st) === 'noMoney' && st.restore === 0 && st.money === c1 - 1);
+  check('돈이 부족하면 확장 불가', G.Expand.apply(D, st) === 'noMoney' && st.expand === 0 && st.money === c1 - 1);
   st.money = c1 + 10;
-  check('복구하면 비용 차감, 단계 진행', G.Restore.apply(D, st) === 'ok' && st.restore === 1 && st.money === 10);
-  check('다음 비용은 2단계 비용', G.Restore.cost(D, st) === c2);
+  check('확장하면 비용 차감, 단계 진행', G.Expand.apply(D, st) === 'ok' && st.expand === 1 && st.money === 10);
+  check('다음 비용은 2단계 비용', G.Expand.cost(D, st) === c2);
   st.money = c2;
-  G.Restore.apply(D, st);
-  check('2단계까지 복구', st.restore === 2 && st.money === 0);
+  G.Expand.apply(D, st);
+  check('2단계까지 확장', st.expand === 2 && st.money === 0);
   st.money = 99999;
-  check('더 복구할 것이 없음', G.Restore.apply(D, st) === 'max' && G.Restore.cost(D, st) === null && st.money === 99999);
+  check('더 확장할 것이 없음', G.Expand.apply(D, st) === 'max' && G.Expand.cost(D, st) === null && st.money === 99999);
+})();
+
+// --- 스토리 ---
+(function () {
+  var S = G.Story;
+  ['story1', 'story2'].forEach(function (id) {
+    var c = S.count(id);
+    check(id + ': 대사 15줄, 선택 2개', c.lines === 15 && c.choices === 2);
+  });
+  check('도입은 짧게 (8줄 이하, 선택 없음)', S.count('intro').lines <= 8 && S.count('intro').choices === 0);
+  check('마무리 장면 있음', S.count('ending').lines > 0);
+
+  // 모든 선택지가 3개, 반응·독백 문장이 있음
+  var ok = true;
+  Object.keys(G.STORY).forEach(function (id) {
+    G.STORY[id].lines.forEach(function (l) {
+      if (l.choice) {
+        if (l.choice.options.length !== 3) ok = false;
+        l.choice.options.forEach(function (o) { if (!o.text || !o.react || !o.mono) ok = false; });
+      } else if (['narr', 'father', 'mother', 'mono'].indexOf(l.who) < 0 || !l.text) ok = false;
+    });
+  });
+  check('모든 줄의 형식이 맞음 (선택지 3개, 반응·독백 있음)', ok);
+
+  // 고른 선택에 따라 반응·독백이 달라지고, 그 다음 줄은 같다
+  function playTo(k) {
+    var run = S.begin('story1'), seen = [];
+    var guard = 0;
+    while (S.current(run).kind !== 'end' && guard++ < 200) {
+      var c = S.current(run);
+      if (c.kind === 'choice') S.choose(run, k);
+      else { seen.push(c.who + ':' + c.text); S.next(run); }
+    }
+    return seen;
+  }
+  var a0 = playTo(0), a1 = playTo(1), a2 = playTo(2);
+  var opt = G.STORY.story1.lines.filter(function (l) { return l.choice; })[0].choice.options;
+  check('선택 1 → 태자 반응 1', a0.indexOf('mother:' + opt[0].react) >= 0 && a0.indexOf('mother:' + opt[1].react) < 0);
+  check('선택 2 → 독백 2', a1.indexOf('mono:' + opt[1].mono) >= 0 && a1.indexOf('mono:' + opt[0].mono) < 0);
+  function strip(list) {
+    var all = [];
+    G.STORY.story1.lines.forEach(function (l) {
+      if (l.choice) l.choice.options.forEach(function (o) { all.push('mother:' + o.react, 'mono:' + o.mono); });
+    });
+    return list.filter(function (x) { return all.indexOf(x) < 0; }).join('|');
+  }
+  check('선택과 상관없이 나머지 이야기는 같음', strip(a0) === strip(a1) && strip(a1) === strip(a2));
+  check('선택 직후 반응 → 독백 순서', a0.indexOf('mother:' + opt[0].react) + 1 === a0.indexOf('mono:' + opt[0].mono));
+
+  var run = S.begin('story1');
+  check('선택지 앞에서는 그냥 넘어가지 않음', (function () {
+    while (S.current(run).kind !== 'choice') S.next(run);
+    S.next(run);
+    return S.current(run).kind === 'choice';
+  })());
+  check('없는 선택지는 고를 수 없음', !S.choose(run, 5));
+
+  // 확장 단계별로 볼 스토리가 data.js에 맞게 있음
+  var okIds = true;
+  D.story.afterExpand.forEach(function (ids) { (ids || []).forEach(function (id) { if (!G.STORY[id]) okIds = false; }); });
+  check('확장 뒤 스토리 id가 모두 있음', okIds && !!G.STORY[D.story.intro] && D.story.afterExpand.length === D.expand.costs.length + 1);
 })();
 
 console.log('통과 ' + pass + ' / 실패 ' + fail);

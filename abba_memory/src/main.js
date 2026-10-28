@@ -1,11 +1,13 @@
 // 게임 시작, 저장, 입력(드래그/터치), 매 프레임 갱신
 var G = G || {};
 
-G.state = null;      // { money, restore, board, orders, tut, served, playMs }
+G.state = null;      // { money, expand, board, orders, tut, served, playMs, storyQueue, finished, continued }
 G.rng = null;
 G.input = null;      // 누르고 있는 중인 정보
 G.anims = [];        // 화면 연출 (아이템 id 기준)
 G.hint = null;       // { text, until }
+G.story = null;      // 보고 있는 스토리 { run, t0(지금 줄 시작 시각), shown(지금 줄), debug }
+G.storyAt = 0;       // 확장 연출이 끝나고 스토리를 열 시각
 
 // ---------- 저장 (막혀 있어도 게임은 동작) ----------
 G.save = function () {
@@ -13,12 +15,15 @@ G.save = function () {
     var s = G.state;
     var o = {
       money: s.money,
-      restore: s.restore,
+      expand: s.expand,
       board: G.Board.serialize(s.board),
       orders: s.orders,
       tut: s.tut,
       served: s.served,
       playMs: s.playMs,
+      storyQueue: s.storyQueue,
+      finished: s.finished,
+      continued: s.continued,
       rng: G.rng.getState()
     };
     window.localStorage.setItem(G.DATA.saveKey, JSON.stringify(o));
@@ -35,12 +40,15 @@ G.load = function () {
     if (!board) { G.showHint(G.DATA.texts.loadFail, 3000); return null; }
     return {
       money: o.money || 0,
-      restore: Math.min(o.restore || 0, G.DATA.restore.costs.length),
+      expand: Math.min(o.expand || 0, G.DATA.expand.costs.length),
       board: board,
       orders: G.Order.valid(G.DATA, o.orders) ? o.orders : null,
       tut: o.tut || 0,
       served: o.served || 0,
       playMs: o.playMs || 0,
+      storyQueue: (o.storyQueue || []).filter(function (id) { return G.STORY[id]; }),
+      finished: !!o.finished,
+      continued: !!o.continued,
       rng: o.rng
     };
   } catch (e) {
@@ -56,12 +64,84 @@ G.clearSave = function () {
 G.newGame = function () {
   G.rng = G.makeRng(G.DATA.seed);
   G.state = {
-    money: G.DATA.startMoney, restore: 0, board: G.Board.create(G.DATA),
-    orders: [], tut: 0, served: 0, playMs: 0
+    money: G.DATA.startMoney, expand: 0, board: G.Board.create(G.DATA),
+    orders: [], tut: 0, served: 0, playMs: 0,
+    storyQueue: [G.DATA.story.intro], finished: false, continued: false
   };
   G.Order.fillAll(G.DATA, G.state, G.rng);
   G.anims = [];
   G.input = null;
+  G.story = null;
+  G.storyAt = 0;
+  G.Scene.go('merge');
+};
+
+// ---------- 스토리 장면 ----------
+// 볼 차례인 스토리가 있으면 열고, 없으면 머지(또는 끝 화면)로
+G.playNextStory = function () {
+  var q = G.state.storyQueue;
+  if (q.length) {
+    G.openStory(q[0], false);
+  } else if (G.state.finished && !G.state.continued) {
+    G.Scene.go('end');
+  } else {
+    G.Scene.go('merge');
+  }
+};
+
+G.openStory = function (id, debug) {
+  G.input = null;
+  G.story = { run: G.Story.begin(id), t0: performance.now(), open: performance.now(), debug: !!debug };
+  G.Scene.go('story');
+};
+
+G.finishStory = function () {
+  var st = G.story;
+  G.story = null;
+  if (st.debug) { G.Scene.go('merge'); return; }
+  G.state.storyQueue.shift();
+  if (st.run.id === 'ending') G.state.finished = true;
+  G.save();
+  G.playNextStory();
+};
+
+// 대사 글자가 다 나왔는가
+G.storyTyped = function (now) {
+  var c = G.Story.current(G.story.run);
+  if (c.kind !== 'line') return true;
+  return (now - G.story.t0) / 1000 * G.DATA.story.charsPerSec >= c.text.length;
+};
+
+G.storyTap = function (p) {
+  var now = performance.now(), run = G.story.run;
+  var c = G.Story.current(run);
+  if (c.kind === 'line') {
+    if (!G.storyTyped(now)) { G.story.t0 = -1e9; return; }   // 덜 나왔으면 한 번에 다 보이기
+    G.Story.next(run);
+  } else if (c.kind === 'choice') {
+    var k = G.UI.choiceAt(p.x, p.y, c.options.length);
+    if (k < 0 || !G.Story.choose(run, k)) return;
+  }
+  G.story.t0 = now;
+  if (G.Story.current(run).kind === 'end') G.finishStory();
+};
+
+// 끝 화면 버튼
+G.endTap = function (p) {
+  var b = G.UI.endButtons();
+  if (G.inRect(b.restart, p.x, p.y)) {
+    var ok = true;
+    try { ok = window.confirm(G.DATA.texts.restartConfirm); } catch (e) { ok = true; }
+    if (!ok) return;
+    G.clearSave();
+    G.newGame();
+    G.save();
+    G.playNextStory();
+  } else if (G.inRect(b.cont, p.x, p.y)) {
+    G.state.continued = true;
+    G.save();
+    G.Scene.go('merge');
+  }
 };
 
 // ---------- 안내 문구 ----------
@@ -186,18 +266,17 @@ G.tapOrder = function (oi) {
   G.save();
 };
 
-G.tapRestore = function () {
+G.tapExpand = function () {
   var D = G.DATA, s = G.state;
-  var r = G.Restore.apply(D, s);
+  var r = G.Expand.apply(D, s);
   if (r === 'noMoney') { G.showHint(D.texts.noMoney, 1500); return; }
   if (r !== 'ok') return;
-  G.addAnim({ type: 'restore', dur: 900 });
-  if (s.restore >= D.restore.costs.length) {
-    G.showHint(D.texts.restoreAllDone.replace('{time}', G.fmtTime(s.playMs)), 8000);
-  } else {
-    G.showHint(D.texts.restoreDone[s.restore], 4000);
-  }
-  // 스토리 장면은 3일차에 여기서 연결
+  G.addAnim({ type: 'expand', dur: 900 });
+  G.showHint(D.texts.expandDone[s.expand], 3000);
+  // 확장 연출이 끝나면 그 단계의 스토리를 엶
+  var next = D.story.afterExpand[s.expand] || [];
+  s.storyQueue = s.storyQueue.concat(next);
+  if (next.length) G.storyAt = performance.now() + D.story.delayMs;
   G.save();
 };
 
@@ -216,11 +295,17 @@ G.toView = function (e) {
 };
 
 G.onDown = function (e) {
-  if (G.input || !G.Scene.is('merge')) return;
+  if (G.input) return;
   var p = G.toView(e);
+  if (!G.Scene.is('merge')) {
+    G.canvas.setPointerCapture(e.pointerId);
+    G.input = { pid: e.pointerId, scene: G.Scene.current };
+    return;
+  }
+  if (G.storyAt) return;   // 확장 연출 중
   var base = { pid: e.pointerId, x0: p.x, y0: p.y, x: p.x, y: p.y, t0: performance.now(), drag: false };
-  if (G.Restore.cost(G.DATA, G.state) !== null && G.inRect(G.DATA.layout.restoreBtn, p.x, p.y)) {
-    base.button = 'restore';
+  if (G.Expand.cost(G.DATA, G.state) !== null && G.inRect(G.DATA.layout.expandBtn, p.x, p.y)) {
+    base.button = 'expand';
   } else if (G.orderAt(p.x, p.y) >= 0) {
     base.order = G.orderAt(p.x, p.y);
   } else {
@@ -237,7 +322,7 @@ G.onMove = function (e) {
   if (!inp || inp.pid !== e.pointerId) return;
   var p = G.toView(e);
   inp.x = p.x; inp.y = p.y;
-  if (inp.from === undefined) return;
+  if (inp.scene || inp.from === undefined) return;
   var c = G.state.board.cells[inp.from];
   var moved = Math.abs(p.x - inp.x0) + Math.abs(p.y - inp.y0) > G.DATA.input.dragStartPx;
   if (!inp.drag && moved && c && c.kind === 'item') {
@@ -253,8 +338,13 @@ G.onUp = function (e) {
   if (!inp || inp.pid !== e.pointerId) return;
   G.input = null;
   var p = G.toView(e);
-  if (inp.button === 'restore') {
-    if (G.inRect(G.DATA.layout.restoreBtn, p.x, p.y)) G.tapRestore();
+  if (inp.scene) {
+    if (inp.scene === 'story' && G.Scene.is('story')) G.storyTap(p);
+    else if (inp.scene === 'end' && G.Scene.is('end')) G.endTap(p);
+    return;
+  }
+  if (inp.button === 'expand') {
+    if (G.inRect(G.DATA.layout.expandBtn, p.x, p.y)) G.tapExpand();
     return;
   }
   if (inp.order !== undefined) {
@@ -286,10 +376,11 @@ G.lastNow = 0;
 G.update = function (now) {
   var dt = G.lastNow ? Math.min(now - G.lastNow, 250) : 0;   // 탭을 떠나 있던 시간은 세지 않음
   G.lastNow = now;
-  if (G.Scene.is('merge') && G.state.restore < G.DATA.restore.costs.length) G.state.playMs += dt;
+  if (G.Scene.is('merge') && G.state.expand < G.DATA.expand.costs.length) G.state.playMs += dt;
+  if (G.storyAt && now >= G.storyAt) { G.storyAt = 0; G.playNextStory(); }
 
   var inp = G.input;
-  if (inp && inp.from !== undefined && !inp.drag && !inp.done && now - inp.t0 >= G.DATA.input.longPressMs) {
+  if (inp && !inp.scene && inp.from !== undefined && !inp.drag && !inp.done && now - inp.t0 >= G.DATA.input.longPressMs) {
     var c = G.state.board.cells[inp.from];
     if (c && c.kind === 'gen') {
       G.showHint(G.DATA.texts.cantDeleteGen, 1500);
@@ -337,7 +428,9 @@ G.start = function () {
     if (!G.state.orders) { G.state.orders = []; G.Order.fillAll(G.DATA, G.state, G.rng); }
   } else {
     G.newGame();
+    G.save();
   }
+  G.playNextStory();   // 도입, 또는 보다 만 스토리부터 다시
   G.resize();
   window.addEventListener('resize', G.resize);
   G.canvas.addEventListener('pointerdown', G.onDown);
