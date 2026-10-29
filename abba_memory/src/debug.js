@@ -31,6 +31,7 @@ G.Debug = {
       '<button data-a="fill">보드 가득 채우기</button>' +
       '<button data-a="orders">주문 새로 뽑기</button>' +
       '<div class="row"><button data-a="tutAgain">튜토리얼 다시</button><button data-a="tutSkip">튜토리얼 끝내기</button></div>' +
+      '<div class="row"><button data-a="title">타이틀 보기</button><button data-a="end">끝 화면 보기</button></div>' +
       '<button data-a="info">진행 정보 (걸린 시간·주문 수)</button>' +
       '<div class="row"><select id="dbgStory">' +
         Object.keys(G.STORY).map(function (k) { return '<option value="' + k + '">' + k + '</option>'; }).join('') +
@@ -117,6 +118,10 @@ G.Debug = {
       G.save();
     }
     else if (a === 'tutSkip') { G.Tut.finish(); }
+    else if (a === 'title' || a === 'end') {   // 편집기로 고친 화면을 바로 확인 (진행은 그대로)
+      G.story = null;
+      G.Scene.go(a);
+    }
     else if (a === 'info') {
       G.Debug.out('머지 시간 ' + G.fmtTime(s.playMs) + '\n낸 주문 ' + s.served +
         '\n돈 ' + s.money + '\n확장 ' + s.expand + '단계\n튜토리얼 ' + (s.tut >= G.Tut.DONE ? '끝남' : (s.tut + 1) + '단계'));

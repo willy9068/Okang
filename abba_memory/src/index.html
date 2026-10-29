@@ -23,20 +23,14 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<!-- 순서대로 불러옵니다 (ES module·fetch 쓰지 않음) -->
-<script src="data.js"></script>
-<script src="ui_text.js"></script>
-<script src="rng.js"></script>
-<script src="board.js"></script>
-<script src="order.js"></script>
-<script src="expand.js"></script>
-<script src="story_data.js"></script>
-<script src="story.js"></script>
-<script src="tutorial.js"></script>
-<script src="scene.js"></script>
-<script src="ui.js"></script>
-<script src="debug.js"></script>
-<script src="edit.js"></script>
-<script src="main.js"></script>
+<!-- 스크립트 목록: 순서대로 불러옵니다 (ES module·fetch 쓰지 않음).
+     열 때마다 주소 끝에 시각을 붙여, 브라우저가 예전 파일을 기억해 두었다가 쓰지 않게 합니다 (편집기로 저장한 값이 바로 보이게).
+     제출본 빌드(tools/build_single.py)는 이 SCRIPTS 목록을 읽어 한 파일에 넣습니다. -->
+<script>
+var SCRIPTS = ['data.js', 'ui_text.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js',
+  'story.js', 'tutorial.js', 'scene.js', 'ui.js', 'debug.js', 'edit.js', 'main.js'];
+var BUST = '?t=' + Date.now();
+SCRIPTS.forEach(function (f) { document.write('<script src="' + f + BUST + '"><\/script>'); });
+</script>
 </body>
 </html>

@@ -13,7 +13,8 @@ G.UI = {
       var im = new Image();
       im.onload = function () { G.IMG[name] = im; };
       im.onerror = function () { G.IMG_FAIL[name] = true; };
-      im.src = (G.ASSET_DATA && G.ASSET_DATA[name]) || (G.ASSET_BASE + name + '.png');
+      // 개발본: 주소 끝에 시각을 붙여 바꾼 그림이 바로 보이게 (제출본은 들어 있는 그림을 씀)
+      im.src = (G.ASSET_DATA && G.ASSET_DATA[name]) || (G.ASSET_BASE + name + '.png' + (window.BUST || ''));
     });
   },
 

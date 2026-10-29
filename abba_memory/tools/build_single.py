@@ -57,13 +57,20 @@ def main():
                  ',\n'.join('  %s: "%s"' % (k, v) for k, v in data.items()) + '\n};\n')
 
     # 스크립트를 순서대로 넣기 (ui.js 앞에 그림)
-    def inline(m):
-        name = m.group(1)
+    # 목록은 index.html 의 SCRIPTS (개발본은 이 목록을 매번 새로 읽음)
+    m = re.search(r'<script>\s*var SCRIPTS = \[(.*?)\];.*?</script>', html, re.S)
+    if not m:
+        sys.exit('index.html 에서 SCRIPTS 목록을 찾지 못했습니다.')
+    names = re.findall(r"'([^']+\.js)'", m.group(1))
+    parts = []
+    for name in names:
         code = open(os.path.join(SRC, name), encoding='utf-8').read()
         code = code.replace('</script', '<\\/script')
-        pre = ('<script>\n' + assets_js + '</script>\n') if name == 'ui.js' else ''
-        return pre + '<script>\n// ---- ' + name + ' ----\n' + code + '\n</script>'
-    html, n = re.subn(r'<script src="([^"]+)"></script>', inline, html)
+        if name == 'ui.js':
+            parts.append('<script>\n' + assets_js + '</script>')
+        parts.append('<script>\n// ---- ' + name + ' ----\n' + code + '\n</script>')
+    html = html[:m.start()] + '\n'.join(parts) + html[m.end():]
+    n = len(names)
     if 'ASSET_DATA' not in html:
         sys.exit('ui.js 를 찾지 못해 그림을 넣지 못했습니다.')
     if re.search(r'<script src=|<link [^>]*href=', html):

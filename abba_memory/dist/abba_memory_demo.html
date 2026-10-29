@@ -23,7 +23,9 @@
 </head>
 <body>
 <canvas id="game"></canvas>
-<!-- 순서대로 불러옵니다 (ES module·fetch 쓰지 않음) -->
+<!-- 스크립트 목록: 순서대로 불러옵니다 (ES module·fetch 쓰지 않음).
+     열 때마다 주소 끝에 시각을 붙여, 브라우저가 예전 파일을 기억해 두었다가 쓰지 않게 합니다 (편집기로 저장한 값이 바로 보이게).
+     제출본 빌드(tools/build_single.py)는 이 SCRIPTS 목록을 읽어 한 파일에 넣습니다. -->
 <script>
 // ---- data.js ----
 // 오캉과 엄마: 아빠의 기억 — 게임 수치는 이 파일 한 곳에 둡니다.
@@ -235,9 +237,9 @@ G.UI_TEXT = {
     },
     "menuBtn": {
       "x": 110,
-      "y": 600,
+      "y": 610,
       "w": 320,
-      "h": 56,
+      "h": 53,
       "gap": 20
     },
     "titleText": {
@@ -285,7 +287,7 @@ G.UI_TEXT = {
     },
     "sign": {
       "x": 78,
-      "y": 162,
+      "y": 175,
       "w": 374,
       "h": 146
     }
@@ -343,14 +345,14 @@ G.UI_TEXT = {
     "endTitle": "오캉과 엄마: 아빠의 기억",
     "endLines": [
       "이야기는 본편으로 이어집니다.",
-      "(데모 · 임시 대사)"
+      ""
     ],
     "endTime": "머지 시간 {time}",
     "endRestart": "처음부터",
     "endContinue": "가게 계속 하기",
     "restartConfirm": "처음부터 다시 할까요? 지금 진행은 지워져요.",
     "noMoney": "돈이 모자라요.",
-    "serveReady": "내기",
+    "serveReady": "",
     "served": "{name} 손님 +{money}",
     "notWanted": "이 주문에는 필요 없는 요리예요.",
     "signText": "황가상점",
@@ -1343,7 +1345,8 @@ G.UI = {
       var im = new Image();
       im.onload = function () { G.IMG[name] = im; };
       im.onerror = function () { G.IMG_FAIL[name] = true; };
-      im.src = (G.ASSET_DATA && G.ASSET_DATA[name]) || (G.ASSET_BASE + name + '.png');
+      // 개발본: 주소 끝에 시각을 붙여 바꾼 그림이 바로 보이게 (제출본은 들어 있는 그림을 씀)
+      im.src = (G.ASSET_DATA && G.ASSET_DATA[name]) || (G.ASSET_BASE + name + '.png' + (window.BUST || ''));
     });
   },
 
@@ -2149,6 +2152,7 @@ G.Debug = {
       '<button data-a="fill">보드 가득 채우기</button>' +
       '<button data-a="orders">주문 새로 뽑기</button>' +
       '<div class="row"><button data-a="tutAgain">튜토리얼 다시</button><button data-a="tutSkip">튜토리얼 끝내기</button></div>' +
+      '<div class="row"><button data-a="title">타이틀 보기</button><button data-a="end">끝 화면 보기</button></div>' +
       '<button data-a="info">진행 정보 (걸린 시간·주문 수)</button>' +
       '<div class="row"><select id="dbgStory">' +
         Object.keys(G.STORY).map(function (k) { return '<option value="' + k + '">' + k + '</option>'; }).join('') +
@@ -2235,6 +2239,10 @@ G.Debug = {
       G.save();
     }
     else if (a === 'tutSkip') { G.Tut.finish(); }
+    else if (a === 'title' || a === 'end') {   // 편집기로 고친 화면을 바로 확인 (진행은 그대로)
+      G.story = null;
+      G.Scene.go(a);
+    }
     else if (a === 'info') {
       G.Debug.out('머지 시간 ' + G.fmtTime(s.playMs) + '\n낸 주문 ' + s.served +
         '\n돈 ' + s.money + '\n확장 ' + s.expand + '단계\n튜토리얼 ' + (s.tut >= G.Tut.DONE ? '끝남' : (s.tut + 1) + '단계'));

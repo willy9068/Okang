@@ -31,9 +31,9 @@ G.UI_TEXT = {
     },
     "menuBtn": {
       "x": 110,
-      "y": 600,
+      "y": 610,
       "w": 320,
-      "h": 56,
+      "h": 53,
       "gap": 20
     },
     "titleText": {
@@ -81,7 +81,7 @@ G.UI_TEXT = {
     },
     "sign": {
       "x": 78,
-      "y": 162,
+      "y": 175,
       "w": 374,
       "h": 146
     }
@@ -139,14 +139,14 @@ G.UI_TEXT = {
     "endTitle": "오캉과 엄마: 아빠의 기억",
     "endLines": [
       "이야기는 본편으로 이어집니다.",
-      "(데모 · 임시 대사)"
+      ""
     ],
     "endTime": "머지 시간 {time}",
     "endRestart": "처음부터",
     "endContinue": "가게 계속 하기",
     "restartConfirm": "처음부터 다시 할까요? 지금 진행은 지워져요.",
     "noMoney": "돈이 모자라요.",
-    "serveReady": "내기",
+    "serveReady": "",
     "served": "{name} 손님 +{money}",
     "notWanted": "이 주문에는 필요 없는 요리예요.",
     "signText": "황가상점",
