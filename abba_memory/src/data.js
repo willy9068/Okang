@@ -43,13 +43,21 @@ G.DATA = {
       name: '돼지국밥',
       color: '#D9C3A0',
       steps: ['돼지뼈', '사골 육수', '수육', '뚝배기 국밥', '국밥 한 상']
+    },
+    // 밀면: 스토리 1 뒤(확장 1단계)부터. 보드가 넓어진 만큼 재료도 늘려 지루하지 않게 (사용자 결정 2026-10-30)
+    milmyeon: {
+      name: '밀면',
+      color: '#E8DDB5',
+      steps: ['밀가루', '면 반죽', '삶은 면', '물밀면', '밀면 한 상']
     }
   },
 
   // 생성기: 체인마다 1개. 처음 놓이는 칸 (col, row는 0부터). 끌어서 옮길 수 있음
+  // fromStage: 이 확장 단계부터 보드에 생김 (그 칸이 차 있으면 가까운 빈 칸). 주문도 그때부터 이 요리를 요구함
   generators: [
-    { chain: 'oden',   name: '생선 상자', col: 1, row: 0 },
-    { chain: 'gukbap', name: '가마솥',   col: 5, row: 0 }
+    { chain: 'oden',     name: '생선 상자',  col: 1, row: 0, fromStage: 0 },
+    { chain: 'gukbap',   name: '가마솥',     col: 5, row: 0, fromStage: 0 },
+    { chain: 'milmyeon', name: '밀가루 포대', col: 0, row: 0, fromStage: 1 }   // 확장 1단계에 열리는 왼쪽 줄
   ],
 
   // 시작할 때 보드에 놓인 재료 (임시: 소량)
@@ -87,6 +95,8 @@ G.DATA = {
     ],
     twoChance: 0.3,            // 요리 2개를 요구하는 주문이 나올 확률
     twoLevelDown: 1,           // 2개짜리 주문은 단계를 이만큼 낮춤 (최소 2단계)
+    threeChanceByStage: [0, 0.2, 0.25],   // 요리 3개를 요구하는 주문 확률 (확장 단계별, 작은 가게에는 없음). 2026-10-30
+    threeLevelDown: 1,         // 3개짜리 주문은 단계를 이만큼 낮춤 (최소 2단계)
     rewardByLv: [0, 5, 15, 35, 80, 170]   // 요리 단계별 보상 (0번은 안 씀)
   },
 
@@ -154,7 +164,8 @@ G.DATA = {
     'ui_dialog', 'bg_memory',
     'ui_lock', 'bg_story1', 'bg_story2',   // 2차 요청 (없으면 코드 그림 / bg_memory)
     'ui_plate',                            // 3차 요청 (없으면 코드 접시)
-    'bg_title'                             // 타이틀 화면 (없으면 bg_memory)
+    'bg_title',                            // 타이틀 화면 (없으면 bg_memory)
+    'milmyeon_1', 'milmyeon_2', 'milmyeon_3', 'milmyeon_4', 'milmyeon_5', 'gen_milmyeon'   // 4차 요청: 밀면 (없으면 색 블록)
   ]
 };
 

@@ -695,3 +695,73 @@ no text
 - 인물은 이미 만든 `char_father`, `char_mother`를 **참조 이미지(IP-Adapter 계열)** 로 넣어 같은 사람으로 보이게 합니다. 배우를 닮지 않았는지 다시 확인합니다 (0-2).
 - 버튼 자리(가운데 1200~1480)에 인물 얼굴이 오지 않게 고릅니다.
 - 상징(장화 두 켤레, 육수 솥)은 작게 보여도 됩니다.
+
+---
+
+## 11. 5차 이미지 요청 — 밀면 재료 · 밀가루 포대 생성기 (2026-10-30)
+
+> 근거: 사용자 결정 (2026-10-30) "스토리 1이 끝나고 머지 단계에서 밀면용 재료 생성기를 하나 추가. 보드 칸은 늘었는데 재료가 그대로라 금방 지루해진다. 다른 음식처럼 5단계 밀면 요리를 추가하고, 손님도 밀면을 주문".
+> 게임: 확장 1단계(스토리 1 직후)에 새로 열리는 **왼쪽 위 칸**에 밀가루 포대가 생기고, 그때부터 손님이 밀면도 주문합니다. **코드는 연결됨** — 그림이 없으면 이름이 적힌 색 블록으로 보이고, `abba_memory/assets/`에 아래 이름으로 넣으면 바로 쓰입니다.
+
+| # | 구분 | 파일명 | 크기(px) | 배경 | 우선 |
+|---|---|---|---|---|---|
+| 41~45 | 밀면 체인 1~5단계 | milmyeon_1 ~ milmyeon_5.png | 256×256 | 투명 | ★ |
+| 46 | 생성기: 밀가루 포대 (밀면) | gen_milmyeon.png | 256×256 | 투명 | ★ |
+
+단계 이름은 `data.js`의 임시 이름입니다: 밀가루 → 면 반죽 → 삶은 면 → 물밀면 → 밀면 한 상.
+
+### 11-1. 밀면 체인 (#41~45) — 시드 고정, 같은 스테인리스 그릇 계열
+2장 스타일 블록 + 4-3 머지 아이템 공통 문장을 앞에 붙입니다. 어묵은 파란 법랑 접시, 국밥은 뚝배기였으니, 밀면은 **부산 밀면집의 넓은 스테인리스 그릇**으로 묶어 한눈에 구분되게 합니다.
+```
+(milmyeon_1 밀가루)   a small mound of fine white wheat flour in a shallow stainless
+                     steel bowl, a little flour dust around it, a wooden scoop
+(milmyeon_2 면 반죽)  a smooth round ball of pale noodle dough on a floured wooden
+                     board, a short wooden rolling pin beside it
+(milmyeon_3 삶은 면)  a neat coil of thin pale chewy wheat noodles in a stainless
+                     steel strainer, glistening with cold water drops
+(milmyeon_4 물밀면)   a wide stainless steel bowl of Busan cold wheat noodle soup,
+                     icy slushy brown broth with crushed ice, thin pale noodles,
+                     a dollop of red chili paste on top, slices of boiled pork, half
+                     a boiled egg, julienned cucumber, thin pickled radish slices,
+                     sesame seeds, cold condensation on the bowl
+(milmyeon_5 밀면 한 상) a full meal tray: the same wide stainless steel bowl of cold
+                     wheat noodle soup with red chili paste on top, a small stainless
+                     cup of steaming hot broth, a plate of steamed dumplings, a small
+                     dish of pickled radish, red vinegar and yellow mustard squeeze
+                     bottles
+```
+네거티브: 2장 공통 + 8-0 일본풍 네거티브 + 아래.
+```
+ramen, udon, soba, japanese noodle bowl, hiyashi chuka, chashu, naruto fish cake,
+lacquer bowl, bamboo mat, text, letters, logo
+```
+메모
+- 1990년 부산 밀면집은 **넓은 스테인리스 그릇 + 얼음 낀 살얼음 육수 + 빨간 양념장 한 덩이**가 상징입니다. 4단계에서 이 세 가지가 보이면 고릅니다.
+- 차가운 국수라 김(steam)은 넣지 않고, 그릇에 **물방울(결로)** 로 차가움을 보입니다. 5단계의 따뜻한 육수 컵만 김이 납니다 (밀면집에서 같이 내는 온육수).
+- 일본 라멘·냉중화처럼 보이면(검은 칠기 그릇, 나루토 어묵, 차슈) 버립니다.
+- 3단계는 국수만 있어도 되지만, 4단계와 같은 **스테인리스 색**이 보여야 같은 체인으로 읽힙니다.
+
+### 11-2. 생성기: 밀가루 포대 (#46)
+```
+(gen_milmyeon) a big plain cloth sack of wheat flour, top folded open and tied with
+               twine, white flour spilling out and dusting the floor, a wooden scoop
+               stuck in the flour, a small lantern-yellow glow around the sack edge,
+               Busan market style, plain unprinted sack
+```
+각 항목 `game item icon, 3/4 top-down angle, plain white background, isolated, centered`.
+네거티브: 2장 공통 + `text, letters, printed logo on sack, brand name, rice sack`.
+메모
+- 실제 밀가루 포대에는 글자가 인쇄돼 있어 AI가 가짜 글자를 넣기 쉽습니다. **글자 없는 천 포대**로 고르고, 남으면 지웁니다.
+- 다른 생성기(생선 상자·가마솥)처럼 **노란 테두리 빛**을 넣어 아이템과 구분합니다.
+- 쌀 포대처럼 보이지 않게 흰 가루가 밖으로 보이는 것을 고릅니다.
+
+### 11-3. 넣은 뒤 확인할 것
+- 보드에서 작게 볼 때 1·2단계(흰 가루, 흰 반죽)가 어묵 1·2단계(분홍빛 생선살, 반죽)와 헷갈리지 않는가 → 헷갈리면 밀면 쪽 그릇·도마를 스테인리스·밀가루 묻은 나무로 더 분명하게
+- 주문 접시에 3개가 함께 올라갈 때(2026-10-30부터 3개짜리 주문 있음) 4단계 물밀면이 국밥(뚝배기)·어묵탕(알루미늄 냄비)과 구분되는가
+- 선택 기록표(7장)에 고른 이유를 적습니다
+
+### 11-4. 5차 결과 확인 (2026-10-30)
+- 6장 모두 넣음 (256×256, 투명 배경), 게임에 바로 쓰임
+- 스테인리스 그릇으로 통일되어 어묵(파란 접시)·국밥(뚝배기)과 구분됨. 1·2단계도 어묵과 헷갈리지 않음. 포대에 글자 없음
+- 물밀면 육수가 주황빛이고 살얼음은 잘 안 보임 → 작게 볼 때는 문제없어 그대로 둠. 다시 뽑는다면 `crushed ice floating, icy translucent broth` 를 더 강하게
+- **[확인 필요]** 선택 기록표(7장)에 사용한 모델·시드·고른 이유를 채워 주세요

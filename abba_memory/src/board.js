@@ -14,6 +14,7 @@ G.Board = {
     var k;
     for (k = 0; k < data.generators.length; k++) {
       var g = data.generators[k];
+      if ((g.fromStage || 0) > 0) continue;   // 나중 단계 생성기는 setStage에서 놓음
       s.cells[G.Board.idx(s, g.col, g.row)] = { kind: 'gen', chain: g.chain, gen: k, id: s.nextId++ };
     }
     for (k = 0; k < data.startItems.length; k++) {
@@ -34,7 +35,31 @@ G.Board = {
       if (open && s.open[i] === false) opened.push(i);
       s.open[i] = open;
     }
+    G.Board.placeGens(data, s, stage);
     return opened;
+  },
+
+  // 이 단계에 생겨야 하는데 보드에 없는 생성기를 놓음 (확장할 때, 예전 저장을 불러올 때)
+  // 정한 칸이 차 있거나 닫혀 있으면 가장 가까운 빈 칸. 놓은 칸 번호 목록을 돌려줌
+  placeGens: function (data, s, stage) {
+    var placed = [];
+    data.generators.forEach(function (g, k) {
+      if ((g.fromStage || 0) > stage) return;
+      for (var i = 0; i < s.cells.length; i++) {
+        if (s.cells[i] && s.cells[i].kind === 'gen' && s.cells[i].chain === g.chain) return;
+      }
+      var want = G.Board.idx(s, g.col, g.row), best = -1, bestD = 1e9;
+      for (i = 0; i < s.cells.length; i++) {
+        if (s.cells[i] || !G.Board.isOpen(s, i)) continue;
+        var d = Math.abs(G.Board.col(s, i) - g.col) + Math.abs(G.Board.row(s, i) - g.row);
+        if (i === want) d = -1;
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      if (best < 0) return;   // 빈 칸이 없으면 다음 확장·불러오기 때 다시 시도
+      s.cells[best] = { kind: 'gen', chain: g.chain, gen: k, id: s.nextId++ };
+      placed.push(best);
+    });
+    return placed;
   },
 
   isOpen: function (s, i) { return i >= 0 && i < s.cells.length && s.open[i] !== false; },

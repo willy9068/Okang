@@ -175,10 +175,13 @@ G.UI = {
       }
 
       // 필요한 요리 (이미 낸 것은 흐리게, 보드에 있는 것은 초록 체크)
-      var n = o.needs.length, size = Math.min(ph * (n === 1 ? 1.15 : 1.0), r.w * (n === 1 ? 0.45 : 0.36));
-      o.needs.forEach(function (need, k2) {
-        var cx = n === 1 ? r.w / 2 : r.w / 2 + (k2 === 0 ? -1 : 1) * pw * 0.22;
-        var cy = py - ph * 0.12;
+      // 1개: 가운데 크게 / 2개: 좌우 / 3개: 가운데 하나를 뒤쪽(위)에, 양옆 둘을 앞에 (가운데를 먼저 그려 뒤로 보이게)
+      var n = o.needs.length;
+      var size = Math.min(ph * [1.15, 1.0, 0.78][n - 1], r.w * [0.45, 0.36, 0.25][n - 1]);
+      (n === 3 ? [1, 0, 2] : o.needs.map(function (_, k) { return k; })).forEach(function (k2) {
+        var need = o.needs[k2];
+        var cx = n === 1 ? r.w / 2 : n === 2 ? r.w / 2 + (k2 === 0 ? -1 : 1) * pw * 0.22 : r.w / 2 + (k2 - 1) * pw * 0.3;
+        var cy = py - ph * 0.12 - (n === 3 && k2 === 1 ? ph * 0.3 : 0);
         ctx.save();
         if (need.done) ctx.globalAlpha = 0.35;
         G.UI.drawCell(ctx, D, C, { kind: 'item', chain: need.chain, lv: need.lv }, cx, cy, size);

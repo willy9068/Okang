@@ -27,11 +27,13 @@ function genIdx(s, chain) {
   return -1;
 }
 
+var GEN0 = D.generators.filter(function (g) { return !g.fromStage; }).length;   // 작은 가게에 있는 생성기 수
+
 // --- 보드 만들기 ---
 (function () {
   var s = B.create(D);
   check('칸 수 = 가로×세로', s.cells.length === D.board.cols * D.board.rows);
-  check('생성기 2개', s.cells.filter(function (c) { return c && c.kind === 'gen'; }).length === D.generators.length);
+  check('처음 생성기는 처음 단계 것만 (어묵·국밥)', s.cells.filter(function (c) { return c && c.kind === 'gen'; }).length === GEN0 && genIdx(s, 'milmyeon') < 0);
   check('시작 재료 수', B.itemCount(s) === D.startItems.length);
 })();
 
@@ -110,7 +112,7 @@ function genIdx(s, chain) {
     if (!B.isOpen(s, r.idx)) inLocked = true;
   }
   check('재료는 닫힌 칸에 생기지 않음', !inLocked);
-  check('열린 칸이 다 차면 가득 참', B.itemCount(s) + D.generators.length === 30 && !B.spawn(s, g, rng).ok);
+  check('열린 칸이 다 차면 가득 참', B.itemCount(s) + GEN0 === 30 && !B.spawn(s, g, rng).ok);
 
   var it = s.cells.findIndex(function (c) { return c && c.kind === 'item'; });
   check('닫힌 칸으로는 못 옮김', B.drop(D, s, it, B.idx(s, 0, 2)).type === 'none' && s.cells[it]);
@@ -206,6 +208,50 @@ function makeState() {
   var hi1 = 0, r3 = G.makeRng(11);
   for (k = 0; k < 200; k++) G.Order.make(D, 1, r3, []).needs.forEach(function (n) { hi1 = Math.max(hi1, n.lv); });
   check('확장 1단계 뒤에는 5단계 요리도 주문', hi1 === 5);
+
+  // 밀면·3개짜리 주문 (2026-10-30): 작은 가게에는 없고, 확장 1단계부터 나옴
+  var r4 = G.makeRng(13), mil0 = 0, three0 = 0;
+  for (k = 0; k < 300; k++) {
+    o = G.Order.make(D, 0, r4, []);
+    if (o.needs.length === 3) three0++;
+    o.needs.forEach(function (n) { if (n.chain === 'milmyeon') mil0++; });
+  }
+  check('작은 가게: 밀면·3개짜리 주문 없음', mil0 === 0 && three0 === 0);
+  var mil1 = 0, three1 = 0, ok3 = true;
+  for (k = 0; k < 300; k++) {
+    o = G.Order.make(D, 1, r4, []);
+    if (o.needs.length === 3) {
+      three1++;
+      o.needs.forEach(function (n) { if (n.lv < 2 || n.lv > 5 - D.orders.threeLevelDown) ok3 = false; });
+    }
+    o.needs.forEach(function (n) { if (n.chain === 'milmyeon') mil1++; });
+  }
+  check('확장 1단계: 밀면 주문이 나옴', mil1 > 30);
+  check('확장 1단계: 3개짜리 주문이 섞여 나옴 (단계 한 칸 낮음)', three1 > 20 && three1 < 120 && ok3);
+  var st3 = { orders: [{ cust: 1, needs: [{ chain: 'milmyeon', lv: 2, done: false }, { chain: 'oden', lv: 2, done: false }, { chain: 'gukbap', lv: 2, done: false }], reward: 45 }] };
+  check('3개짜리 저장 주문도 올바름', G.Order.valid({ chains: D.chains, orders: { count: 1 } }, st3.orders));
+})();
+
+// --- 밀면 생성기 (2026-10-30: 확장 1단계에 생김) ---
+(function () {
+  var s = B.create(D);
+  B.setStage(D, s, 1);
+  var g = genIdx(s, 'milmyeon');
+  var want = D.generators.filter(function (x) { return x.chain === 'milmyeon'; })[0];
+  check('확장 1단계: 밀면 생성기가 정한 칸에 생김', g === B.idx(s, want.col, want.row));
+  B.setStage(D, s, 2);
+  check('다시 넓혀도 밀면 생성기는 하나', s.cells.filter(function (c) { return c && c.kind === 'gen' && c.chain === 'milmyeon'; }).length === 1);
+  var r = B.spawn(s, g, G.makeRng(4));
+  check('밀면 생성기를 누르면 밀가루', r.ok && s.cells[r.idx].chain === 'milmyeon' && s.cells[r.idx].lv === 1);
+
+  // 정한 칸이 차 있으면 가까운 빈 칸 (예전 저장을 확장 1단계로 불러온 경우)
+  var s2 = B.create(D);
+  B.setStage(D, s2, 0);
+  s2.open[B.idx(s2, want.col, want.row)] = true;
+  s2.cells[B.idx(s2, want.col, want.row)] = B.newItem(s2, 'oden', 1);
+  B.setStage(D, s2, 1);
+  var g2 = genIdx(s2, 'milmyeon');
+  check('정한 칸이 차 있으면 다른 빈 열린 칸에', g2 >= 0 && g2 !== B.idx(s2, want.col, want.row) && B.isOpen(s2, g2));
 })();
 
 (function () {

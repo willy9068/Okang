@@ -8,12 +8,15 @@ G.Order = {
   make: function (data, stage, rng, busy) {
     var O = data.orders;
     var pool = O.levelsByStage[Math.min(stage, O.levelsByStage.length - 1)];
-    var chains = Object.keys(data.chains);
-    var n = rng() < O.twoChance ? 2 : 1;
+    var chains = G.Order.chainsAt(data, stage);
+    var t3 = O.threeChanceByStage ? O.threeChanceByStage[Math.min(stage, O.threeChanceByStage.length - 1)] : 0;
+    var roll = rng();
+    var n = roll < t3 ? 3 : roll < t3 + O.twoChance ? 2 : 1;
     var needs = [], reward = 0;
     for (var k = 0; k < n; k++) {
       var lv = pool[Math.floor(rng() * pool.length)];
       if (n === 2) lv = Math.max(2, lv - O.twoLevelDown);
+      if (n === 3) lv = Math.max(2, lv - O.threeLevelDown);
       var chain = chains[Math.floor(rng() * chains.length)];
       needs.push({ chain: chain, lv: lv, done: false });
       reward += O.rewardByLv[lv];
@@ -22,6 +25,12 @@ G.Order = {
     if (!free.length) free = data.customers;
     var cust = free[Math.floor(rng() * free.length)].id;
     return { cust: cust, needs: needs, reward: reward };
+  },
+
+  // 이 확장 단계에서 주문에 나올 수 있는 요리 (생성기가 생긴 것만)
+  chainsAt: function (data, stage) {
+    return data.generators.filter(function (g) { return (g.fromStage || 0) <= stage; })
+      .map(function (g) { return g.chain; });
   },
 
   // 빈 주문 칸을 채움 (처음 시작, 불러오기 실패 때)

@@ -84,6 +84,7 @@ function play(seed) {
     if (served) continue;
     var m = bestMerge(st);
     if (m) { B.drop(D, st.board, m.from, m.to); t += S.secMerge; continue; }
+    chains = G.Order.chainsAt(D, st.expand);   // 생성기가 있는 요리만 (밀면은 확장 1단계부터)
     var chain = chains.slice().sort(function (a, b) { return deficit(st, b) - deficit(st, a); })[0];
     if (B.isFull(st.board) || deficit(st, chain) <= 0) {
       var j = junk(st);
