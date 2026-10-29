@@ -50,6 +50,7 @@ G.UI = {
     G.UI.drawBoard(ctx, D, C, now);
     G.UI.drawEffects(ctx, D, C, now);
     G.UI.drawHint(ctx, D, C, now);
+    if (G.Tut.active()) G.Tut.draw(ctx, now);
     if (G.Scene.is('story') && G.story) {
       ctx.save();
       ctx.globalAlpha = Math.min(1, (now - G.story.open) / D.story.fadeMs);
@@ -124,6 +125,7 @@ G.UI = {
     var drag = inp && inp.drag ? G.state.board.cells[inp.from] : null;
     var hoverOrder = drag ? G.orderAt(inp.x, inp.y) : -1;
     G.state.orders.forEach(function (o, oi) {
+      if (!G.Tut.showOrder(oi)) return;   // 튜토리얼 중에는 튜토리얼 손님만
       var r = G.orderRect(oi);
       var have = G.Order.haveFlags(o, G.state.board);
       var ready = have.every(function (h) { return h; });
@@ -165,10 +167,10 @@ G.UI = {
         ctx.beginPath(); ctx.ellipse(r.w / 2, py, pw / 2 - 7, ph / 2 - 5, 0, 0, Math.PI * 2);
         ctx.lineWidth = 2; ctx.strokeStyle = '#7FA6C9'; ctx.stroke();  // 파란 테두리
       }
-      if (accept || ready) {
+      if (accept || ready) {   // 받을 수 있는 접시: 합칠 수 있는 칸과 같은 초록
         ctx.beginPath(); ctx.ellipse(r.w / 2, py, pw / 2 + 3, ph / 2 + 3, 0, 0, Math.PI * 2);
-        ctx.lineWidth = hoverOrder === oi ? 5 : 3;
-        ctx.strokeStyle = C.mergeGlow; ctx.stroke();
+        ctx.lineWidth = hoverOrder === oi ? 9 : 7; ctx.strokeStyle = C.mergeHintDark; ctx.stroke();
+        ctx.lineWidth = hoverOrder === oi ? 5 : 3.5; ctx.strokeStyle = C.mergeHint; ctx.stroke();
       }
 
       // 필요한 요리 (이미 낸 것은 흐리게, 보드에 있는 것은 초록 체크)
@@ -302,16 +304,15 @@ G.UI = {
       if (!G.Board.isOpen(s, i)) G.UI.drawLocked(ctx, C, r);
     }
 
-    // 합칠 수 있는 칸: 노란 점선 테두리 (드래그 중)
+    // 합칠 수 있는 칸 (드래그 중): 칸 안을 초록으로 깜빡이게 채움 (테두리는 아이템 위에 다시 그림)
+    var pulse = 0.5 + 0.5 * Math.sin(now / 160);
     if (targets.length) {
       ctx.save();
-      ctx.setLineDash([6, 4]);
-      ctx.lineDashOffset = -(now / 40) % 10;
-      ctx.lineWidth = 3; ctx.strokeStyle = C.mergeGlow;
+      ctx.fillStyle = 'rgba(57,230,107,' + (0.25 + 0.3 * pulse) + ')';
       targets.forEach(function (t) {
         var tr = G.cellRect(t);
-        G.UI.roundRect(ctx, tr.x + 3, tr.y + 3, tr.w - 6, tr.h - 6, 9);
-        ctx.stroke();
+        G.UI.roundRect(ctx, tr.x + 2, tr.y + 2, tr.w - 4, tr.h - 4, 10);
+        ctx.fill();
       });
       ctx.restore();
     }
@@ -320,7 +321,7 @@ G.UI = {
       var hr = G.cellRect(hover);
       var ok = targets.indexOf(hover) >= 0;
       G.UI.roundRect(ctx, hr.x + 2, hr.y + 2, hr.w - 4, hr.h - 4, 10);
-      ctx.fillStyle = ok ? 'rgba(255,200,87,0.35)' : 'rgba(255,255,255,0.12)';
+      ctx.fillStyle = ok ? 'rgba(57,230,107,0.55)' : 'rgba(255,255,255,0.12)';
       ctx.fill();
     }
 
@@ -385,6 +386,21 @@ G.UI = {
       }
       ctx.restore();
     });
+
+    // 합칠 수 있는 칸 테두리: 어두운 바깥선 + 밝은 초록 점선 (아이템 위에)
+    if (targets.length) {
+      ctx.save();
+      targets.forEach(function (t) {
+        var tr = G.cellRect(t);
+        G.UI.roundRect(ctx, tr.x + 2, tr.y + 2, tr.w - 4, tr.h - 4, 10);
+        ctx.setLineDash([]);
+        ctx.lineWidth = 7; ctx.strokeStyle = C.mergeHintDark; ctx.stroke();
+        ctx.setLineDash([8, 5]);
+        ctx.lineDashOffset = -(now / 30) % 13;
+        ctx.lineWidth = 4; ctx.strokeStyle = C.mergeHint; ctx.stroke();
+      });
+      ctx.restore();
+    }
 
     // 드래그 중인 아이템 (손가락 위, 조금 크게)
     if (inp && inp.drag) {
@@ -494,8 +510,7 @@ G.UI = {
 
   drawHint: function (ctx, D, C, now) {
     var H = D.layout.hint;
-    var tut = G.tutText();
-    var text = (G.hint && now < G.hint.until) ? G.hint.text : (tut || D.texts.hintMerge);
+    var text = (G.hint && now < G.hint.until) ? G.hint.text : D.texts.hintMerge;
     ctx.fillStyle = C.cream;
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -597,9 +612,9 @@ G.UI = {
     ctx.restore();
   },
 
-  // 마무리 장면: 글씨 있는 간판 그림(bg_ending)이 없으면 빈 간판 위에 코드로 '황가상점'
+  // 마무리 장면: bg_story2의 빈 간판 위에 코드로 '황가상점'
   drawSign: function (ctx, D, C, id) {
-    if (id !== D.story.signScene || G.UI.img(D.story.signNeedsMissing)) return;
+    if (id !== D.story.signScene) return;
     var r = D.storyLayout.sign, t = D.texts.signText;
     ctx.save();
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

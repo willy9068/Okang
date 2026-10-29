@@ -69,6 +69,7 @@ G.newGame = function () {
     storyQueue: [G.DATA.story.intro], finished: false, continued: false
   };
   G.Order.fillAll(G.DATA, G.state, G.rng);
+  G.Tut.setup(G.state);   // 튜토리얼 + 첫 쉬운 주문
   G.anims = [];
   G.input = null;
   G.story = null;
@@ -163,18 +164,6 @@ G.showHint = function (text, ms) {
   G.hint = { text: text, until: performance.now() + (ms || 2200) };
 };
 
-// 조작 안내: 안내마다 따로 '해 봤음'을 표시 (tut는 비트 묶음)
-G.tutDone = function (step) {
-  G.state.tut |= (1 << step);
-};
-
-// 아직 안 해 본 첫 안내 문장 (다 했으면 null)
-G.tutText = function () {
-  var list = G.DATA.tutorial;
-  for (var i = 0; i < list.length; i++) if (!(G.state.tut & (1 << i))) return list[i];
-  return null;
-};
-
 G.fmtTime = function (ms) {
   var sec = Math.floor(ms / 1000);
   return Math.floor(sec / 60) + ':' + ('0' + (sec % 60)).slice(-2);
@@ -229,7 +218,7 @@ G.tapGenerator = function (i) {
   var from = G.cellRect(i);
   G.addAnim({ type: 'fly', id: res.item.id, fromX: from.x, fromY: from.y, dur: 180 });
   G.addAnim({ type: 'bump', id: G.state.board.cells[i].id, dur: 160 });
-  G.tutDone(0);
+  G.Tut.event('spawn');
   G.save();
 };
 
@@ -239,7 +228,7 @@ G.dropItem = function (from, to) {
   if (res.type === 'merge') {
     G.addAnim({ type: 'pop', id: res.item.id, dur: 260 });
     G.addAnim({ type: 'spark', idx: res.idx, dur: 400 });
-    G.tutDone(1);
+    G.Tut.event('merge');
     if (res.item.lv === G.Board.maxLv(G.DATA, res.item.chain)) {
       G.showHint(G.DATA.chains[res.item.chain].steps[res.item.lv - 1] + ' 완성!', 2000);
     }
@@ -259,7 +248,7 @@ G.afterServe = function (oi, done) {
   G.showHint(G.DATA.texts.served.replace('{name}', cust ? cust.name : '').replace('{money}', done.reward), 2000);
   G.addAnim({ type: 'coin', oi: oi, amount: done.reward, dur: 700 });
   G.addAnim({ type: 'order', oi: oi, dur: 300 });
-  G.tutDone(2);
+  G.Tut.event('serve');
 };
 
 // 요리를 주문 칸에 끌어 놓기
@@ -328,8 +317,18 @@ G.onDown = function (e) {
     base.order = G.orderAt(p.x, p.y);
   } else {
     var i = G.cellAt(p.x, p.y);
-    if (i < 0 || !G.state.board.cells[i]) return;
+    if (i < 0 || !G.state.board.cells[i]) {
+      if (G.Tut.active() && G.state.tut === 3) G.Tut.finish();
+      return;
+    }
     base.from = i;
+  }
+  // 튜토리얼 중: 마지막 단계는 아무 데나 누르면 끝, 그 전에는 해야 할 곳만
+  if (G.Tut.active()) {
+    if (G.state.tut === 3) { G.Tut.finish(); return; }
+    var kind = base.button ? 'button' : base.order !== undefined ? 'order' : 'cell';
+    var idx = base.order !== undefined ? base.order : base.from;
+    if (!G.Tut.allowDown(G.state, kind, idx)) return;
   }
   G.canvas.setPointerCapture(e.pointerId);
   G.input = base;
@@ -375,6 +374,7 @@ G.onUp = function (e) {
   if (!c) return;
   if (inp.drag) {
     var oi = G.orderAt(p.x, p.y);
+    if (G.Tut.active() && !G.Tut.allowDrop(G.state, inp.from, G.cellAt(p.x, p.y), oi)) return;   // 튜토리얼: 제자리로
     if (oi >= 0 && c.kind === 'item') G.deliverItem(inp.from, oi);
     else G.dropItem(inp.from, G.cellAt(p.x, p.y));
   } else if (c.kind === 'gen') {
@@ -399,7 +399,7 @@ G.update = function (now) {
   if (G.storyAt && now >= G.storyAt) { G.storyAt = 0; G.playNextStory(); }
 
   var inp = G.input;
-  if (inp && !inp.scene && inp.from !== undefined && !inp.drag && !inp.done && now - inp.t0 >= G.DATA.input.longPressMs) {
+  if (inp && !inp.scene && inp.from !== undefined && !inp.drag && !G.Tut.active() && !inp.done && now - inp.t0 >= G.DATA.input.longPressMs) {
     var c = G.state.board.cells[inp.from];
     if (c && c.kind === 'gen') {
       G.showHint(G.DATA.texts.cantDeleteGen, 1500);

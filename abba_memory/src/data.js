@@ -5,7 +5,7 @@
 var G = G || {};
 
 G.DATA = {
-  saveKey: 'abba_memory_v5',   // 저장 형식이 바뀌면 숫자를 올립니다 (v5: 대사·상징 수정)
+  saveKey: 'abba_memory_v6',   // 저장 형식이 바뀌면 숫자를 올립니다 (v6: 튜토리얼)
   seed: 20261028,              // 시드 난수 (같은 시드 = 같은 결과)
 
   // 화면: 세로 9:16. 코드는 540×960 좌표로 그리고 이미지는 2배(1080×1920)로 만듭니다.
@@ -69,6 +69,13 @@ G.DATA = {
   // 시작 돈
   startMoney: 0,
 
+  // 튜토리얼 (도입 뒤 첫 머지 화면): 가운데(slot 1) 손님에게 쉬운 주문 하나. 설명 문장은 ui_text.js의 tutorial
+  tutorialSetup: {
+    chain: 'oden',
+    slot: 1,
+    order: { cust: 2, needs: [{ chain: 'oden', lv: 2 }], reward: 15 }
+  },
+
   // 손님 주문 (임시)
   orders: {
     count: 3,                  // 동시에 뜨는 주문 수
@@ -96,11 +103,10 @@ G.DATA = {
     charsPerSec: 32,                    // 한 글자씩 나오는 속도
     fadeMs: 250,                        // 대화창 나타나는 시간
     // 스토리별 배경 그림. 앞에서부터 있는 파일을 씀, 다 없으면 bg_memory(밤 시장 골목)
-    bg: { intro: ['bg_memory'], story1: ['bg_story1'], story2: ['bg_story2'], ending: ['bg_ending', 'bg_story2'] },
-    // 마무리 장면 간판 글씨: bg_ending 그림이 없을 때 bg_story2의 빈 간판 위에 코드로 씀
+    bg: { intro: ['bg_memory'], story1: ['bg_story1'], story2: ['bg_story2'], ending: ['bg_story2'] },
+    // 마무리 장면 간판 글씨: bg_story2의 빈 간판 위에 코드로 씀 (2026-10-29 사용자 결정, bg_ending 그림은 만들지 않음)
     // (자리·크기·글자는 ui_text.js의 storyLayout.sign, texts.signText)
-    signScene: 'ending',
-    signNeedsMissing: 'bg_ending'
+    signScene: 'ending'
   },
 
   // 밸런스 계산용 (tools/balance.js만 씀): 사람이 한 동작에 쓰는 시간(초)
@@ -123,6 +129,8 @@ G.DATA = {
     cellRim: '#4A4440',
     locked: 'rgba(10,8,6,0.62)',   // 닫힌 칸 덮개
     mergeGlow: '#FFC857',
+    mergeHint: '#39E66B',          // 합칠 수 있는 칸 (나무판·쟁반·생성기 빛과 구분되는 밝은 초록)
+    mergeHintDark: '#0B3A1A',
     night: '#2A2350',
     nightDeep: '#141C33',
     father: ['#E89AAE', '#4F8A5B'],   // placeholder: 분홍 셔츠, 초록 멜빵바지
@@ -145,7 +153,7 @@ G.DATA = {
     // 안 쓰는 그림은 목록에서 뺌 (제출본 용량): ui_order(말풍선, 접시로 바뀜), char_*_smile(표정 차분, 아직 안 씀)
     'ui_dialog', 'bg_memory',
     'ui_lock', 'bg_story1', 'bg_story2',   // 2차 요청 (없으면 코드 그림 / bg_memory)
-    'bg_ending', 'ui_plate',               // 3차 요청 (없으면 bg_story2 + 코드 간판 글씨 / 코드 접시)
+    'ui_plate',                            // 3차 요청 (없으면 코드 접시)
     'bg_title'                             // 타이틀 화면 (없으면 bg_memory)
   ]
 };

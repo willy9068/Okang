@@ -3,9 +3,9 @@ var fs = require('fs');
 var path = require('path');
 var vm = require('vm');
 
-var ctx = { Math: Math, JSON: JSON };
+var ctx = { Math: Math, JSON: JSON, performance: { now: function () { return 0; } } };
 vm.createContext(ctx);
-['data.js', 'ui_text.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js', 'story.js'].forEach(function (f) {
+['data.js', 'ui_text.js', 'rng.js', 'board.js', 'order.js', 'expand.js', 'story_data.js', 'story.js', 'tutorial.js'].forEach(function (f) {
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', f), 'utf8'), ctx, { filename: f });
 });
 var G = ctx.G, D = G.DATA, B = G.Board;
@@ -326,6 +326,31 @@ function makeState() {
   });
   check('스토리마다 배경 그림 이름이 있고 이미지 목록에 들어 있음', bgOk);
   check('확장 뒤 스토리 id가 모두 있음', okIds && !!G.STORY[D.story.intro] && D.story.afterExpand.length === D.expand.costs.length + 1);
+})();
+
+// --- 튜토리얼 ---
+(function () {
+  var T = G.Tut, D2 = D.tutorialSetup;
+  var st = { money: 0, expand: 0, board: B.create(D), orders: [], served: 0 };
+  G.Order.fillAll(D, st, G.makeRng(1));
+  T.setup(st);
+  G.state = st;
+  var o = st.orders[D2.slot];
+  check('튜토리얼 주문: 가운데 칸에 쉬운 요리 하나', o.needs.length === 1 && o.needs[0].chain === D2.chain && o.needs[0].lv === 2);
+  var custs = st.orders.map(function (x) { return x.cust; });
+  check('튜토리얼 손님이 다른 칸 손님과 안 겹침', custs[0] !== custs[1] && custs[1] !== custs[2]);
+  var g = T.gen(st.board);
+  check('1단계: 생성기만 누를 수 있음', st.tut === 0 && T.allowDown(st, 'cell', g) && !T.allowDown(st, 'button', -1) && !T.allowDown(st, 'order', D2.slot));
+  var r = B.spawn(st.board, g, G.makeRng(2)); T.event('spawn');
+  check('재료를 뽑으면 2단계로', r.ok && st.tut === 1);
+  var p = T.pair(st.board);
+  check('2단계: 같은 재료 두 칸이 있음', p && p.length === 2 && B.canMerge(D, st.board.cells[p[0]], st.board.cells[p[1]]));
+  check('2단계: 다른 칸에는 못 놓음', !T.allowDrop(st, p[0], g, -1) && T.allowDrop(st, p[0], p[1], -1));
+  B.drop(D, st.board, p[0], p[1]); T.event('merge');
+  check('합치면 3단계, 접시에만 놓을 수 있음', st.tut === 2 && T.allowDrop(st, p[1], -1, D2.slot) && !T.allowDrop(st, p[1], -1, 0));
+  var res = G.Order.deliver(D, st, D2.slot, T.dish(st), G.makeRng(3)); T.event('serve');
+  check('접시에 내면 돈을 받고 4단계', res.ok && res.completed && st.money === D2.order.reward && st.tut === 3);
+  check('마무리 문장 4개', D.tutorial.length === 4);
 })();
 
 console.log('통과 ' + pass + ' / 실패 ' + fail);

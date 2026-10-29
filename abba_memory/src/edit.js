@@ -41,7 +41,8 @@ G.Edit = {
             return { x: (D.view.w - w) / 2, y: B.top, w: w, h: B.rows * B.cell };
           },
           set: function (r) { B.top = r.y; B.cell = Math.max(24, Math.round(r.w / B.cols)); } },
-        mix({ id: 'hint', name: '안내 문구 줄' }, full(L.hint))
+        mix({ id: 'hint', name: '안내 문구 줄' }, full(L.hint)),
+        mix({ id: 'tutBubble', name: '튜토리얼 태자 말풍선' }, plain(L.tutBubble))
       ],
       story: [
         mix({ id: 'father', name: '나 (아버지 그림)' }, plain(S.father)),
@@ -120,6 +121,7 @@ G.Edit = {
       if (!s.board.cells[i]) s.board.cells[i] = G.Board.newItem(s.board, p[2], p[3]);
     });
     s.money = 120;
+    s.tut = G.Tut.DONE;
   },
 
   init: function () {
