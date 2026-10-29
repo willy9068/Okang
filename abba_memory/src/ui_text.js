@@ -124,39 +124,39 @@ G.UI_TEXT = {
       "확장 1단계",
       "확장 2단계"
     ],
-    "hintMerge": "같은 재료 같은 단계끼리 겹치면 다음 단계가 돼요.",
-    "boardFull": "보드가 가득 찼어요! 아이템을 길게 눌러 치울 수 있어요.",
-    "deleted": "치웠어요.",
-    "cantDeleteGen": "생성기는 치울 수 없어요.",
-    "loadFail": "저장된 진행을 불러오지 못해 새로 시작해요.",
+    "hintMerge": "같은 재료 같은 단계끼리 포개믄 다음 단계 됩니더.",
+    "boardFull": "보드가 꽉 찼네예! 길게 누르믄 치울 수 있어예.",
+    "deleted": "치았어예.",
+    "cantDeleteGen": "생성기는 몬 치웁니더.",
+    "loadFail": "저장한 거를 몬 불러와가 새로 시작합니더.",
     "expandBtn": "가게 확장",
     "expandDone": [
       "",
-      "가게가 한 칸 넓어졌어요!",
-      "가게가 북적이기 시작했어요!"
+      "가게가 한 칸 넓어졌다 아입니꺼!",
+      "가게가 인자 북적북적하네예!"
     ],
     "tapNext": "▼",
     "endTitle": "오캉과 엄마: 아빠의 기억",
     "endLines": [
-      "이야기는 본편으로 이어집니다.",
+      "이야기는 본편에서 이어집니더.",
       ""
     ],
     "endTime": "머지 시간 {time}",
-    "endRestart": "처음부터",
-    "endContinue": "가게 계속 하기",
-    "restartConfirm": "처음부터 다시 할까요? 지금 진행은 지워져요.",
-    "noMoney": "돈이 모자라요.",
+    "endRestart": "처음부터 하입시더",
+    "endContinue": "장사 더 하입시더",
+    "restartConfirm": "처음부터 다시 할낍니꺼? 지금까지 한 거는 다 지워집니더.",
+    "noMoney": "돈이 모자라예.",
     "serveReady": "",
     "served": "{name} 손님 +{money}",
-    "notWanted": "이 주문에는 필요 없는 요리예요.",
+    "notWanted": "이 주문에는 필요 없는 기라예.",
     "signText": "황가상점",
     "titleMain": "오캉과 엄마",
     "titleSub": "아빠의 기억",
-    "titleNote": "데모 · 임시 대사",
-    "titleContinue": "이어하기",
-    "titleNew": "처음부터",
-    "titleStart": "시작하기",
-    "tutTapToStart": "(화면을 누르면 시작)"
+    "titleNote": "",
+    "titleContinue": "이어서 하입시더",
+    "titleNew": "처음부터 하입시더",
+    "titleStart": "장사 시작하입시더",
+    "tutTapToStart": "(화면을 누르믄 시작합니더)"
   }
 };
 

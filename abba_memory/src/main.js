@@ -230,7 +230,7 @@ G.dropItem = function (from, to) {
     G.addAnim({ type: 'spark', idx: res.idx, dur: 400 });
     G.Tut.event('merge');
     if (res.item.lv === G.Board.maxLv(G.DATA, res.item.chain)) {
-      G.showHint(G.DATA.chains[res.item.chain].steps[res.item.lv - 1] + ' 완성!', 2000);
+      G.showHint(G.DATA.chains[res.item.chain].steps[res.item.lv - 1] + ' 다 됐네예!', 2000);
     }
   } else if (res.type === 'swap') {
     var r = G.cellRect(to);

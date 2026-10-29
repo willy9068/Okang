@@ -17,6 +17,7 @@ ASSETS = os.path.join(ROOT, 'assets')
 OUT = os.path.join(ROOT, 'dist', 'abba_memory_demo.html')
 
 WEBP_QUALITY = 82          # 화질 (0~100). 낮을수록 파일이 작아짐
+WEBP_METHOD = 4            # 압축 노력 (0~6). 6은 4배 느리고 크기는 4%만 줄어 4로 둠
 BG_MAX = (1080, 1920)      # 배경 그림 최대 크기 (지금 그림 크기 그대로)
 
 
@@ -35,7 +36,7 @@ def to_webp(path):
     if im.width > BG_MAX[0] or im.height > BG_MAX[1]:
         im.thumbnail(BG_MAX, Image.LANCZOS)
     buf = io.BytesIO()
-    im.save(buf, 'WEBP', quality=WEBP_QUALITY, method=6)
+    im.save(buf, 'WEBP', quality=WEBP_QUALITY, method=WEBP_METHOD)
     return buf.getvalue()
 
 
@@ -44,11 +45,14 @@ def main():
 
     # 그림
     data, used, missing, raw_total = {}, 0, [], 0
-    for name in image_names():
+    names_img = image_names()
+    print('그림 줄이는 중... (%d장)' % len(names_img), flush=True)
+    for i, name in enumerate(names_img, 1):
         p = os.path.join(ASSETS, name + '.png')
         if not os.path.exists(p):
             missing.append(name)
             continue
+        print('  [%d/%d] %s' % (i, len(names_img), name), flush=True)
         b = to_webp(p)
         raw_total += os.path.getsize(p)
         used += len(b)
