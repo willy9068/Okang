@@ -46,6 +46,12 @@
   .count { font-size: 13px; margin: 6px 0 10px; }
   .warn { color: #b03a2e; }
   #sceneLabel { font-size: 13px; color: #4a3d2a; }
+  #punct { position: sticky; top: -12px; z-index: 2; display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+           margin: -12px -12px 10px; padding: 8px 12px; background: #F1E8D3; border-bottom: 1px solid #d6c8a8; }
+  #punct button { padding: 2px 9px; font-size: 13px; min-width: 30px; }
+  #punct .lab { font-size: 12px; color: #6b5a40; margin-right: 2px; }
+  .fit { font-size: 11px; color: #6b5a40; margin: 2px 0 0; text-align: right; }
+  .fit.warn { color: #b03a2e; font-weight: bold; }
 </style>
 </head>
 <body>
@@ -191,11 +197,81 @@ function firstChoice(id) {
   return 0;
 }
 
+// ---------- 글자 도구: 줄 바꿈 · 문장 기호 (화면 문장 · 대사 탭 위) ----------
+var lastField = null;   // 마지막으로 누른 입력칸. 도구 버튼은 여기에 넣음
+document.getElementById('panel').addEventListener('focusin', function (e) {
+  if (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type === 'text')) lastField = e.target;
+});
+var PUNCT = [['↵ 줄 바꿈', '\n'], ['.', '.'], [',', ','], ['?', '?'], ['!', '!'], ['…', '…'], ['~', '~'], ['“ ”', ['“', '”']], ['‘ ’', ['‘', '’']]];
+function punctBar() {
+  var bar = el('div', { id: 'punct' }, [el('span', { class: 'lab', text: '글자 도구' })]);
+  PUNCT.forEach(function (p) {
+    var b = el('button', { text: p[0], title: Array.isArray(p[1]) ? '고른 글자를 따옴표로 감쌈' : (p[1] === '\n' ? '누른 자리에서 줄을 바꿈 (입력칸에서 Enter도 같음)' : '누른 자리에 넣기') });
+    b.addEventListener('mousedown', function (e) { e.preventDefault(); });   // 입력칸 포커스·커서를 지킴
+    b.addEventListener('click', function () { insertAt(p[1]); });
+    bar.appendChild(b);
+  });
+  var split = el('button', { text: '문장마다 줄 나누기', title: '마침표·물음표·느낌표·말줄임표 뒤의 띄어쓰기를 줄 바꿈으로 바꿈' });
+  split.addEventListener('mousedown', function (e) { e.preventDefault(); });
+  split.addEventListener('click', function () {
+    var f = needField(); if (!f) return;
+    if (!canBreak(f)) return;
+    setField(f, f.value.replace(/([.?!…])[ \t]+(?=\S)/g, '$1\n'), null);
+  });
+  bar.appendChild(split);
+  return bar;
+}
+function needField() {
+  if (lastField && document.body.contains(lastField)) return lastField;
+  alert('먼저 고칠 입력칸을 누르세요.'); return null;
+}
+function canBreak(f) {
+  if (f.tagName === 'TEXTAREA') return true;
+  document.getElementById('status').textContent = '이 칸은 한 줄짜리라 줄을 바꿀 수 없습니다';
+  return false;
+}
+function insertAt(v) {
+  var f = needField(); if (!f) return;
+  if (v === '\n' && !canBreak(f)) return;
+  var a = f.selectionStart, b = f.selectionEnd, t = f.value;
+  if (Array.isArray(v)) setField(f, t.slice(0, a) + v[0] + t.slice(a, b) + v[1] + t.slice(b), b + 2);
+  else setField(f, t.slice(0, a) + v + t.slice(b), a + v.length);
+}
+function setField(f, value, caret) {
+  f.value = value;
+  f.focus();
+  if (caret !== null) f.setSelectionRange(caret, caret);
+  f.dispatchEvent(new Event('input'));   // 값 저장·미리보기·줄 수 표시가 평소 입력과 같이 갱신됨
+}
+// 게임 화면에서 몇 줄로 보이는지 (게임의 줄바꿈 함수와 글꼴 그대로)
+var measureCtx = document.createElement('canvas').getContext('2d');
+function screenLines(kind, text) {
+  var d = D(), B = d.storyLayout.box, font = '19px sans-serif', w = B.w - 2 * B.pad, max = 3;   // 4번째 줄은 대화창 아래 모서리 장식과 겹침
+  if (kind === 'mono') font = 'italic 19px sans-serif';
+  if (kind === 'opt') { font = '17px sans-serif'; w = W.G.UI.choiceRect(0).w - 64; max = 2; }
+  if (kind === 'tut') { var T = d.layout.tutBubble, ps = T.h - 24; font = '16px sans-serif'; w = T.w - 16 - 14 - ps - 14; max = 3; }
+  measureCtx.font = font;
+  return { n: W.G.UI.wrap(measureCtx, text, w).length, max: max };
+}
+// 입력칸 아래에 '화면 n줄 / 최대 m줄' (넘치면 빨간 글자)
+function withFit(field, kind) {
+  var info = el('div', { class: 'fit' });
+  function upd() {
+    var k = typeof kind === 'function' ? kind() : kind, r = screenLines(k, field.value);
+    info.className = 'fit' + (r.n > r.max ? ' warn' : '');
+    info.textContent = '게임 화면 ' + r.n + '줄 / 최대 ' + r.max + '줄' + (r.n > r.max ? ' — 넘칩니다. 줄이거나 나누세요' : '');
+  }
+  field.addEventListener('input', upd);
+  upd();
+  return el('div', null, [field, info]);
+}
+
 // ---------- 탭: 화면 문장 ----------
 function renderTexts() {
   var p = document.getElementById('panel'), d = D();
   p.innerHTML = '';
-  p.appendChild(el('p', { class: 'help', text: '고치면 미리보기에 바로 보입니다 (보이는 장면에 있는 문장만). { } 로 감싼 표시는 게임이 숫자·이름으로 바꾸는 자리이니 지우지 마세요.' }));
+  p.appendChild(punctBar());
+  p.appendChild(el('p', { class: 'help', text: '고치면 미리보기에 바로 보입니다 (보이는 장면에 있는 문장만). { } 로 감싼 표시는 게임이 숫자·이름으로 바꾸는 자리이니 지우지 마세요. 튜토리얼 말풍선은 Enter나 "↵ 줄 바꿈"으로 줄을 바꿀 수 있습니다 (최대 3줄).' }));
 
   p.appendChild(el('h3', { text: '이름표' }));
   p.appendChild(textRow('나 (아버지)', d.names, 'father'));
@@ -206,7 +282,9 @@ function renderTexts() {
 
   p.appendChild(el('h3', { text: '튜토리얼 (도입 뒤 첫 머지 화면, 태자 말풍선)' }));
   ['1. 생성기 누르기', '2. 같은 재료 겹치기', '3. 손님 접시에 놓기', '4. 확장 버튼 안내'].forEach(function (lab, i) {
-    p.appendChild(textRow(lab, d.tutorial, i));
+    var ta = el('textarea'); ta.value = d.tutorial[i];
+    ta.addEventListener('input', function () { d.tutorial[i] = ta.value; setDirty(true); });
+    p.appendChild(el('div', { class: 'row' }, [el('label', { class: 'k', text: lab }), el('div', { style: 'flex:1' }, [withFit(ta, 'tut')])]));
   });
 
   p.appendChild(el('h3', { text: '화면 문장' }));
@@ -231,6 +309,7 @@ function renderStory() {
   var p = document.getElementById('panel'), st = S();
   var id = view.story;
   p.innerHTML = '';
+  p.appendChild(punctBar());
   var sel = el('select');
   Object.keys(st).forEach(function (k) {
     var o = el('option', { value: k, text: STORY_NAMES[k] || k });
@@ -246,7 +325,7 @@ function renderStory() {
   var cnt = el('div', { class: 'count' + (guide && (nl !== 15 || nc !== 2) ? ' warn' : ''),
     text: '대사 ' + nl + '줄 · 선택 ' + nc + '개' + (guide ? '  (개발 가이드 기준: 대사 15줄 · 선택 2개)' : '') });
   p.appendChild(cnt);
-  p.appendChild(el('p', { class: 'help', text: '줄을 누르면 미리보기에 그 줄이 보입니다. 선택지의 "반응"은 고른 직후 태자의 한 줄, "속마음"은 이어지는 아버지 독백입니다. 고른 뒤 이야기는 무엇을 골라도 같습니다.' }));
+  p.appendChild(el('p', { class: 'help', text: '줄을 누르면 미리보기에 그 줄이 보입니다. 선택지의 "반응"은 고른 직후 태자의 한 줄, "속마음"은 이어지는 아버지 독백입니다. 고른 뒤 이야기는 무엇을 골라도 같습니다. 입력칸에서 Enter를 누르면 게임에서도 그 자리에서 줄이 바뀝니다. 대화창은 3줄까지 깔끔하게 보입니다 (4번째 줄은 모서리 장식과 겹침).' }));
 
   L.forEach(function (l, i) { p.appendChild(l.choice ? choiceCard(id, L, i) : lineCard(id, L, i)); });
   p.appendChild(el('div', { class: 'row' }, [
@@ -277,14 +356,14 @@ function lineCard(id, L, i) {
   var l = L[i], cur = view.story === id && view.line === i && view.pick === null;
   var who = el('select');
   WHO.forEach(function (w) { var o = el('option', { value: w[0], text: w[1] }); if (w[0] === l.who) o.selected = true; who.appendChild(o); });
-  who.addEventListener('change', function () { l.who = who.value; setDirty(true); preview('story', id, i); });
+  who.addEventListener('change', function () { l.who = who.value; setDirty(true); preview('story', id, i); ta.dispatchEvent(new Event('input')); });
   var ta = el('textarea');
   ta.value = l.text;
   ta.addEventListener('input', function () { l.text = ta.value; setDirty(true); });
   ta.addEventListener('focus', function () { preview('story', id, i); });
   return el('div', { class: 'line' + (cur ? ' cur' : '') }, [
     el('div', { class: 'head' }, [el('span', { class: 'n', text: (i + 1) + '' }), who].concat(tools(id, L, i))),
-    ta
+    withFit(ta, function () { return l.who === 'mono' ? 'mono' : 'line'; })
   ]);
 }
 function choiceCard(id, L, i) {
@@ -298,7 +377,7 @@ function choiceCard(id, L, i) {
     el('div', { class: 'row' }, [el('label', { text: '대화창 문장' }), pr])
   ]);
   c.options.forEach(function (o, k) {
-    var t = el('input', { type: 'text' }); t.value = o.text;
+    var t = el('textarea'); t.value = o.text;
     t.addEventListener('input', function () { o.text = t.value; setDirty(true); });
     t.addEventListener('focus', function () { preview('story', id, i); });
     var re = el('textarea'); re.value = o.react;
@@ -308,9 +387,9 @@ function choiceCard(id, L, i) {
     mo.addEventListener('input', function () { o.mono = mo.value; setDirty(true); });
     mo.addEventListener('focus', function () { preview('story', id, i, k, 'mono'); });
     box.appendChild(el('div', { class: 'opt' }, [
-      el('div', { class: 'row' }, [el('b', { text: (k + 1) + '번 보기' }), t]),
-      el('div', { class: 'lab', text: '고른 직후 태자 반응' }), re,
-      el('div', { class: 'lab', text: '이어지는 아버지 속마음' }), mo
+      el('b', { text: (k + 1) + '번 보기 (선택지 칸, 최대 2줄)' }), withFit(t, 'opt'),
+      el('div', { class: 'lab', text: '고른 직후 태자 반응' }), withFit(re, 'line'),
+      el('div', { class: 'lab', text: '이어지는 아버지 속마음' }), withFit(mo, 'mono')
     ]));
   });
   return box;

@@ -6,3 +6,8 @@
 .claude/
 assets/original/
 abba_memory/tools/editor_backup/
+
+# 데모 제출 폴더: 안내 README만 올림 (빌드·zip·제안서·영상은 로컬, 2026-10-29)
+데모제출/*
+!데모제출/README.md
+레퍼런스 이미지/

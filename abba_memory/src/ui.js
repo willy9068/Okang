@@ -539,20 +539,23 @@ G.UI = {
     });
   },
 
-  // 글자 폭에 맞춰 줄바꿈 (띄어쓰기 우선, 긴 단어는 글자 단위)
+  // 글자 폭에 맞춰 줄바꿈 (띄어쓰기 우선, 긴 단어는 글자 단위). 대사 속 '\n'은 그 자리에서 줄을 바꿈
   wrap: function (ctx, text, maxW) {
-    var out = [], line = '';
-    text.split(' ').forEach(function (word) {
-      var t = line ? line + ' ' + word : word;
-      if (ctx.measureText(t).width <= maxW) { line = t; return; }
-      if (line) out.push(line);
-      line = '';
-      for (var i = 0; i < word.length; i++) {
-        if (ctx.measureText(line + word[i]).width > maxW) { out.push(line); line = ''; }
-        line += word[i];
-      }
+    var out = [];
+    String(text).split('\n').forEach(function (para) {
+      var line = '', start = out.length;
+      para.split(' ').forEach(function (word) {
+        var t = line ? line + ' ' + word : word;
+        if (ctx.measureText(t).width <= maxW) { line = t; return; }
+        if (line) out.push(line);
+        line = '';
+        for (var i = 0; i < word.length; i++) {
+          if (ctx.measureText(line + word[i]).width > maxW) { out.push(line); line = ''; }
+          line += word[i];
+        }
+      });
+      if (line || out.length === start) out.push(line);   // 빈 줄도 한 줄로 셈
     });
-    if (line) out.push(line);
     return out;
   },
 
