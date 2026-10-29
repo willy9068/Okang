@@ -645,3 +645,51 @@ source, no people, wide horizontal composition
 메모
 - **게임 화면에서 보이는 곳**: 위쪽 112px는 HUD, 그 아래 가운데에 손님 3명과 접시(2026-10-29부터 말풍선 대신 접시)가 가로로 놓입니다. 손님 머리 뒤(가운데 높이)에 큰 물건이 몰리지 않게 고릅니다.
 - 고를 때 확인: 경계 띠·흐린 사각형이 없는가, 빛 방향이 한 장 안에서 같은가, 세 장의 카운터 높이가 비슷한가.
+
+### 9-4. 3차 결과 확인 (2026-10-29)
+- `ui_plate`: 규격(256×128, 투명) 그대로, 게임의 손님 앞 접시로 바로 쓰임
+- `shop_0~2`: **각각 자연스러운 한 장**이 되었고, 시장 셔터 사이 작은 가게 → 양옆이 넓어진 가게 → 항구 창이 있는 큰 가게로 확장이 잘 보임. 경계 띠도 없어짐
+- 남은 점: 메뉴판·벽 간판에 **한자 비슷한 가짜 글자**가 조금 있음 (`shop_0` 오른쪽 위, `shop_1` 메뉴판, `shop_2` 왼쪽 벽). 게임에서는 작게 보여 급하지 않음. 고친다면 그 부분만 지우거나 빈 판으로 칠함
+- `bg_ending`은 아직 없음 → 게임은 `bg_story2` + 코드 간판 글씨로 나옴
+
+---
+
+## 10. 4차 이미지 요청 — 타이틀 화면 (2026-10-29)
+
+> 근거: 사용자 결정 (2026-10-29) "타이틀 화면 + 이어하기/처음부터", 타이틀 그림 프롬프트도 추가. 대표 이미지(키 아트)는 여전히 '나중에'이고, 이것은 **게임 첫 화면 배경**입니다.
+> 그림이 없으면 게임은 `bg_memory`(밤 시장 골목) 위에 제목을 씁니다.
+
+| # | 구분 | 파일명 | 크기(px) | 배경 | 우선 | 코드 |
+|---|---|---|---|---|---|---|
+| 40 | 타이틀 배경 | bg_title.png | 1080×1920 | 있음 | ○ | 연결됨 (없으면 bg_memory) |
+
+**화면에서 가려지는 자리 (1080×1920 기준)** — 제목 글자와 버튼은 코드가 얹습니다.
+```
+y    0 ┌──────────────────────┐
+       │ 하늘·전구 줄 (그림)       │
+  500  │ ── 제목 글자 (코드) ──    │ 500~800: 차분하게 비워 둠
+  800  │                      │
+ 1200  │   [ 이어하기 ] (코드)    │ 1200~1480: 가운데 버튼 자리
+ 1480  │   [ 처음부터 ] (코드)    │
+       │ 인물은 양옆 아래쪽        │
+ 1920  └──────────────────────┘
+```
+
+**bg_title**
+```
+vertical scene, dusk in a Busan traditional market alley in 1990, a small
+Korean restaurant with aluminum-framed sliding glass doors glowing warmly in
+the background, bare warm light bulbs strung across the alley, a cute chibi
+young Korean man in a pink shirt and green overalls standing at the lower
+left and a cute chibi young Korean woman with a low ponytail, cream blouse and
+dark red apron standing at the lower right, both turned slightly toward each
+other, two pairs of rubber boots by the restaurant door, a steaming stainless
+steel stock pot, soft purple and orange evening sky, nostalgic memory mood,
+calm empty area in the upper middle for the title, open center for buttons,
+no text
+```
+네거티브: 2장 공통 + 8-0 일본풍 네거티브 + `text, letters, signboard text, gibberish`.
+메모
+- 인물은 이미 만든 `char_father`, `char_mother`를 **참조 이미지(IP-Adapter 계열)** 로 넣어 같은 사람으로 보이게 합니다. 배우를 닮지 않았는지 다시 확인합니다 (0-2).
+- 버튼 자리(가운데 1200~1480)에 인물 얼굴이 오지 않게 고릅니다.
+- 상징(장화 두 켤레, 육수 솥)은 작게 보여도 됩니다.

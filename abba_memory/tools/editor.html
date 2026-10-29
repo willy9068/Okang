@@ -87,7 +87,9 @@ var TEXT_LABELS = {
   endTitle: '끝 화면 제목', endLines: '끝 화면 문장', endTime: '끝 화면 시간 ({time} 지우지 않기)',
   endRestart: '끝 화면 버튼: 처음부터', endContinue: '끝 화면 버튼: 계속', restartConfirm: '처음부터 확인 문구',
   noMoney: '돈이 모자랄 때', serveReady: '요리가 다 모였을 때 버튼', served: '주문을 냈을 때 ({name}, {money} 지우지 않기)',
-  notWanted: '필요 없는 요리를 놓았을 때', signText: '마무리 장면 간판 글씨 (bg_ending 그림이 없을 때)'
+  notWanted: '필요 없는 요리를 놓았을 때', signText: '마무리 장면 간판 글씨 (bg_ending 그림이 없을 때)',
+  titleMain: '타이틀 윗줄', titleSub: '타이틀 큰 글자', titleNote: '타이틀 아랫줄',
+  titleContinue: '타이틀 버튼: 이어하기', titleNew: '타이틀 버튼: 처음부터', titleStart: '타이틀 버튼: 시작하기 (저장 없을 때)'
 };
 
 function el(tag, attrs, kids) {
@@ -113,7 +115,7 @@ function showView() {
   var E = W.G.Edit;
   if (view.scene === 'story') E.show('story', view.story, view.line, view.pick, view.step);
   else E.show(view.scene);
-  var label = { merge: '머지 화면', end: '끝 화면' }[view.scene] ||
+  var label = { title: '타이틀', merge: '머지 화면', end: '끝 화면' }[view.scene] ||
     ('스토리: ' + STORY_NAMES[view.story] + ' · ' + (view.line + 1) + '번째 줄' +
      (view.pick !== null ? ' · ' + (view.pick + 1) + '번 고른 뒤 ' + (view.step === 'mono' ? '속마음' : '태자 반응') : ''));
   document.getElementById('sceneLabel').textContent = '미리보기: ' + label + '  (미리보기 안에서 상자를 끌면 옮겨지고, 오른쪽 아래 네모를 끌면 크기가 바뀝니다)';
@@ -137,6 +139,7 @@ function renderLayout(selId) {
   p.innerHTML = '';
   p.appendChild(el('p', { class: 'help', text: '미리보기 안의 상자를 직접 끌거나, 아래 숫자를 고치세요. 좌표는 540×960 화면 기준입니다 (그림 파일은 2배 크기).' }));
   var sc = el('div', { class: 'row' }, [
+    sceneBtn('타이틀', 'title'),
     sceneBtn('머지 화면', 'merge'),
     sceneBtn('스토리: 대사', 'story', function () { preview('story', 'ending', 0); }),
     sceneBtn('스토리: 선택지', 'story', function () { preview('story', 'story1', firstChoice('story1')); }),
@@ -145,7 +148,7 @@ function renderLayout(selId) {
   p.appendChild(sc);
   var E = W.G.Edit;
   var items = E.items();
-  if (!items.length) p.appendChild(el('p', { class: 'help', text: '이 장면에는 옮길 상자가 없습니다. 끝 화면 문장은 "화면 문장" 탭에서 고칩니다.' }));
+  if (!items.length) p.appendChild(el('p', { class: 'help', text: '이 장면에는 옮길 상자가 없습니다.' }));
   items.forEach(function (d) {
     var r = d.get(), on = (selId || E.sel) === d.id;
     var box = el('div', { class: 'item' + (on ? ' sel' : ''), onclick: function () { E.sel = d.id; renderLayout(d.id); } });

@@ -126,22 +126,36 @@ G.storyTap = function (p) {
   if (G.Story.current(run).kind === 'end') G.finishStory();
 };
 
-// 끝 화면 버튼
-G.endTap = function (p) {
-  var b = G.UI.endButtons();
-  if (G.inRect(b.restart, p.x, p.y)) {
+// 처음부터: 저장이 있으면 한 번 묻고, 지운 뒤 도입부터
+G.restart = function (ask) {
+  if (ask) {
     var ok = true;
     try { ok = window.confirm(G.DATA.texts.restartConfirm); } catch (e) { ok = true; }
     if (!ok) return;
-    G.clearSave();
-    G.newGame();
-    G.save();
-    G.playNextStory();
-  } else if (G.inRect(b.cont, p.x, p.y)) {
+  }
+  G.clearSave();
+  G.newGame();
+  G.save();
+  G.hasSave = true;
+  G.playNextStory();
+};
+
+// 끝 화면 버튼: 0 처음부터, 1 가게 계속 하기
+G.endTap = function (p) {
+  var k = G.UI.menuAt(p.x, p.y, 2);
+  if (k === 0) G.restart(true);
+  else if (k === 1) {
     G.state.continued = true;
     G.save();
     G.Scene.go('merge');
   }
+};
+
+// 타이틀 버튼: 저장이 있으면 0 이어하기, 1 처음부터 / 없으면 0 시작하기
+G.titleTap = function (p) {
+  var k = G.UI.menuAt(p.x, p.y, G.hasSave ? 2 : 1);
+  if (G.hasSave && k === 0) G.playNextStory();
+  else if (k >= 0) G.restart(G.hasSave);
 };
 
 // ---------- 안내 문구 ----------
@@ -345,6 +359,7 @@ G.onUp = function (e) {
   if (inp.scene) {
     if (inp.scene === 'story' && G.Scene.is('story')) G.storyTap(p);
     else if (inp.scene === 'end' && G.Scene.is('end')) G.endTap(p);
+    else if (inp.scene === 'title' && G.Scene.is('title')) G.titleTap(p);
     return;
   }
   if (inp.button === 'expand') {
@@ -441,8 +456,9 @@ G.start = function () {
     G.newGame();
     G.save();
   }
+  G.hasSave = !!saved;   // 타이틀에서 '이어하기'를 보여 줄지
   if (G.Edit.on) G.Edit.init();
-  else G.playNextStory();   // 도입, 또는 보다 만 스토리부터 다시
+  else G.Scene.go('title');   // 타이틀 → 이어하기(보다 만 스토리부터) 또는 처음부터
   G.resize();
   window.addEventListener('resize', G.resize);
   G.canvas.addEventListener('pointerdown', G.onDown);

@@ -18,16 +18,27 @@ G.UI_TEXT = {
       "h": 30
     },
     "expandBtn": {
-      "x": 170,
+      "x": 175,
       "y": 9,
       "w": 200,
       "h": 38
     },
     "orders": {
-      "y": 58,
+      "y": 129,
       "w": 160,
       "h": 200,
       "gap": 15
+    },
+    "menuBtn": {
+      "x": 110,
+      "y": 600,
+      "w": 320,
+      "h": 56,
+      "gap": 20
+    },
+    "titleText": {
+      "y": 250,
+      "h": 150
     }
   },
   "boardPos": {
@@ -131,7 +142,13 @@ G.UI_TEXT = {
     "serveReady": "내기",
     "served": "{name} 손님 +{money}",
     "notWanted": "이 주문에는 필요 없는 요리예요.",
-    "signText": "황가상점"
+    "signText": "황가상점",
+    "titleMain": "오캉과 엄마",
+    "titleSub": "아빠의 기억",
+    "titleNote": "데모 · 임시 대사",
+    "titleContinue": "이어하기",
+    "titleNew": "처음부터",
+    "titleStart": "시작하기"
   }
 };
 

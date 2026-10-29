@@ -140,11 +140,13 @@ G.DATA = {
     'ui_cell', 'ui_board', 'ui_hud', 'ui_coin', 'fx_merge',
     'shop_0', 'shop_1', 'shop_2',
     'cust_1', 'cust_2', 'cust_3', 'cust_4',
-    'ui_order', 'ui_button', 'ui_expand',   // ui_order(말풍선)는 2026-10-29 접시 방식으로 바뀌어 안 씀
-    'char_father', 'char_mother', 'char_father_smile', 'char_mother_smile',
+    'ui_button', 'ui_expand',
+    'char_father', 'char_mother',
+    // 안 쓰는 그림은 목록에서 뺌 (제출본 용량): ui_order(말풍선, 접시로 바뀜), char_*_smile(표정 차분, 아직 안 씀)
     'ui_dialog', 'bg_memory',
     'ui_lock', 'bg_story1', 'bg_story2',   // 2차 요청 (없으면 코드 그림 / bg_memory)
-    'bg_ending', 'ui_plate'                // 3차 요청 (없으면 bg_story2 + 코드 간판 글씨 / 코드 접시)
+    'bg_ending', 'ui_plate',               // 3차 요청 (없으면 bg_story2 + 코드 간판 글씨 / 코드 접시)
+    'bg_title'                             // 타이틀 화면 (없으면 bg_memory)
   ]
 };
 

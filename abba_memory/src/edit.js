@@ -52,8 +52,15 @@ G.Edit = {
           set: function (r) { S.choice.x = r.x; S.choice.y = r.y; S.choice.w = r.w; S.choice.h = r.h; } },
         mix({ id: 'sign', name: '간판 글씨 자리 (마무리 장면)' }, plain(S.sign))
       ],
+      title: [
+        mix({ id: 'titleText', name: '제목 글자' }, full(L.titleText)),
+        { id: 'menuBtn', name: '버튼 (첫 버튼 기준)', extra: ['gap'], obj: L.menuBtn,
+          get: function () { var M = L.menuBtn; return { x: M.x, y: M.y, w: M.w, h: M.h }; },
+          set: function (r) { var M = L.menuBtn; M.x = r.x; M.y = r.y; M.w = r.w; M.h = r.h; } }
+      ],
       end: []
     };
+    list.end.push(list.title[1]);   // 끝 화면 버튼도 같은 자리
     function mix(a, b) { for (var k in b) if (!(k in a)) a[k] = b[k]; return a; }
     // extra 값(gap, pad 등)이 들어 있는 원래 객체
     list.merge[2].obj = L.orders;

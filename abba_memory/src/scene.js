@@ -1,9 +1,9 @@
-// 장면 상태: 'merge'(머지 보드) / 'story'(대화창: 도입·스토리 1·2·마무리) / 'end'(끝 화면)
-// 흐름: 도입 → 머지 → 확장 1 → 스토리 1 → 머지 → 확장 2 → 스토리 2 → 마무리 → 끝 화면
+// 장면 상태: 'title'(타이틀) / 'merge'(머지 보드) / 'story'(대화창: 도입·스토리 1·2·마무리) / 'end'(끝 화면)
+// 흐름: 타이틀 → 도입 → 머지 → 확장 1 → 스토리 1 → 머지 → 확장 2 → 스토리 2 → 마무리 → 끝 화면
 var G = G || {};
 
 G.Scene = {
-  list: ['merge', 'story', 'end'],
+  list: ['title', 'merge', 'story', 'end'],
   current: 'merge',
 
   go: function (name) {

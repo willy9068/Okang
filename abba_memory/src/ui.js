@@ -8,6 +8,8 @@ G.IMG_FAIL = {};     // 이름 → 불러오기 실패
 G.UI = {
   loadImages: function () {
     G.DATA.images.forEach(function (name) {
+      // 제출본(단일 HTML)은 들어 있는 그림만 씀. 없는 그림은 요청하지 않음 (콘솔 오류 0)
+      if (G.ASSET_ONLY && !(G.ASSET_DATA && G.ASSET_DATA[name])) { G.IMG_FAIL[name] = true; return; }
       var im = new Image();
       im.onload = function () { G.IMG[name] = im; };
       im.onerror = function () { G.IMG_FAIL[name] = true; };
@@ -55,6 +57,8 @@ G.UI = {
       ctx.restore();
     } else if (G.Scene.is('end')) {
       G.UI.drawEnd(ctx, D, C);
+    } else if (G.Scene.is('title')) {
+      G.UI.drawTitle(ctx, D, C);
     }
     if (G.Edit.on) G.Edit.draw(ctx);
   },
@@ -700,17 +704,59 @@ G.UI = {
     }
   },
 
-  // ---------- 끝 화면 ----------
-  endButtons: function () {
-    return {
-      restart: { x: 110, y: 600, w: 320, h: 56 },
-      cont: { x: 110, y: 676, w: 320, h: 56 }
-    };
+  // ---------- 타이틀 · 끝 화면 버튼 (ui_text.js의 layout.menuBtn, 아래로 나란히) ----------
+  menuRect: function (k) {
+    var M = G.DATA.layout.menuBtn;
+    return { x: M.x, y: M.y + k * (M.h + M.gap), w: M.w, h: M.h };
   },
 
+  menuAt: function (x, y, n) {
+    for (var k = 0; k < n; k++) if (G.inRect(G.UI.menuRect(k), x, y)) return k;
+    return -1;
+  },
+
+  drawMenu: function (ctx, C, items) {
+    items.forEach(function (it, k) {
+      var r = G.UI.menuRect(k);
+      G.UI.roundRect(ctx, r.x, r.y, r.w, r.h, 14);
+      ctx.fillStyle = it[1]; ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = C.gold; ctx.stroke();
+      ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(it[0], r.x + r.w / 2, r.y + r.h / 2);
+    });
+  },
+
+  // 글자가 잘 보이게 가로 띠를 살짝 어둡게 (위아래는 흐리게)
+  darkBand: function (ctx, D, y, h) {
+    var g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, 'rgba(20,28,51,0)'); g.addColorStop(0.5, 'rgba(20,28,51,0.6)'); g.addColorStop(1, 'rgba(20,28,51,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, y, D.view.w, h);
+  },
+
+  // ---------- 타이틀 ----------
+  drawTitle: function (ctx, D, C) {
+    var T = D.texts, R = D.layout.titleText;
+    G.UI.drawNight(ctx, D, C, ['bg_title']);
+    G.UI.darkBand(ctx, D, R.y - 40, R.h + 80);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.cream; ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(T.titleMain, D.view.w / 2, R.y + R.h * 0.25);
+    ctx.fillStyle = C.mono; ctx.font = 'bold 44px sans-serif';
+    ctx.fillText(T.titleSub, D.view.w / 2, R.y + R.h * 0.58);
+    ctx.fillStyle = 'rgba(244,230,204,0.75)'; ctx.font = '14px sans-serif';
+    ctx.fillText(T.titleNote, D.view.w / 2, R.y + R.h * 0.9);
+    G.UI.drawMenu(ctx, C, G.hasSave
+      ? [[T.titleContinue, C.teal], [T.titleNew, '#4A5468']]
+      : [[T.titleStart, C.teal]]);
+  },
+
+  // ---------- 끝 화면 ----------
   drawEnd: function (ctx, D, C) {
-    var T = D.texts, b = G.UI.endButtons();
+    var T = D.texts;
     G.UI.drawNight(ctx, D, C);
+    G.UI.darkBand(ctx, D, 270, 290);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = C.mono; ctx.font = 'bold 28px sans-serif';
     ctx.fillText(T.endTitle, D.view.w / 2, 330);
@@ -718,13 +764,6 @@ G.UI = {
     T.endLines.forEach(function (l, i) { ctx.fillText(l, D.view.w / 2, 400 + i * 30); });
     ctx.fillStyle = 'rgba(244,230,204,0.6)'; ctx.font = '14px sans-serif';
     ctx.fillText(T.endTime.replace('{time}', G.fmtTime(G.state.playMs)), D.view.w / 2, 520);
-    [[b.restart, T.endRestart, C.teal], [b.cont, T.endContinue, '#4A5468']].forEach(function (x) {
-      var r = x[0];
-      G.UI.roundRect(ctx, r.x, r.y, r.w, r.h, 14);
-      ctx.fillStyle = x[2]; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = C.gold; ctx.stroke();
-      ctx.fillStyle = '#FFFFFF'; ctx.font = 'bold 18px sans-serif';
-      ctx.fillText(x[1], r.x + r.w / 2, r.y + r.h / 2);
-    });
+    G.UI.drawMenu(ctx, C, [[T.endRestart, C.teal], [T.endContinue, '#4A5468']]);
   }
 };
